@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Trash2, Edit3, Calculator, MapPin, BookOpen } from 'lucide-react'
+import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import {
@@ -9,6 +9,8 @@ import {
   STATUTS,
   SOURCES,
   PRIORITES,
+  PROFILS_RESTAURATEUR,
+  TYPES_CUISINE,
   isRelanceOverdue,
 } from '../lib/constants'
 
@@ -123,6 +125,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                   </span>
                 </div>
 
+                {/* Contact */}
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {prospect.etablissement && (
                     <div>
@@ -163,12 +166,100 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                   </div>
                 </div>
 
+                {/* Profil restaurateur */}
+                <div className="border-t border-border pt-3">
+                  <h4 className="text-xs font-medium text-text-secondary mb-2 flex items-center gap-1.5">
+                    <ChefHat size={13} />
+                    Profil restaurateur
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-text-secondary text-xs">Profil</span>
+                      <p className="text-text-primary flex items-center gap-1.5">
+                        {prospect.profil_restaurateur === 'multi_etablissements' && <Building2 size={14} className="text-primary" />}
+                        {getLabel(PROFILS_RESTAURATEUR, prospect.profil_restaurateur)}
+                      </p>
+                    </div>
+                    {prospect.profil_restaurateur === 'multi_etablissements' && prospect.nombre_restaurants > 1 && (
+                      <div>
+                        <span className="text-text-secondary text-xs">Nb restaurants</span>
+                        <p className="text-text-primary">{prospect.nombre_restaurants}</p>
+                      </div>
+                    )}
+                    {prospect.type_cuisine && (
+                      <div>
+                        <span className="text-text-secondary text-xs">Type de cuisine</span>
+                        <p className="text-text-primary">{getLabel(TYPES_CUISINE, prospect.type_cuisine)}</p>
+                      </div>
+                    )}
+                    {prospect.nombre_salaries != null && (
+                      <div>
+                        <span className="text-text-secondary text-xs">Salariés</span>
+                        <p className="text-text-primary">{prospect.nombre_salaries}</p>
+                      </div>
+                    )}
+                    {prospect.siret && (
+                      <div>
+                        <span className="text-text-secondary text-xs">SIRET</span>
+                        <p className="text-text-primary font-mono text-xs">{prospect.siret}</p>
+                      </div>
+                    )}
+                    {prospect.ca_annuel_declare != null && (
+                      <div>
+                        <span className="text-text-secondary text-xs">CA annuel (Pappers)</span>
+                        <p className="text-text-primary font-medium">{formatCurrency(prospect.ca_annuel_declare)}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expert comptable */}
+                <div className="border-t border-border pt-3">
+                  <h4 className="text-xs font-medium text-text-secondary mb-2 flex items-center gap-1.5">
+                    <Briefcase size={13} />
+                    Expert-comptable
+                  </h4>
+                  <div className="text-sm">
+                    {prospect.a_expert_comptable ? (
+                      <p className="text-text-primary">
+                        <span className="text-success font-medium">Oui</span>
+                        {prospect.nom_expert_comptable && ` — ${prospect.nom_expert_comptable}`}
+                      </p>
+                    ) : (
+                      <p className="text-text-secondary">Pas d'expert-comptable renseigné</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Infos local */}
+                {(prospect.surface_local_m2 || prospect.loyer_mensuel) && (
+                  <div className="border-t border-border pt-3">
+                    <h4 className="text-xs font-medium text-text-secondary mb-2">Infos local</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {prospect.surface_local_m2 != null && (
+                        <div>
+                          <span className="text-text-secondary text-xs">Surface</span>
+                          <p className="text-text-primary">{prospect.surface_local_m2} m²</p>
+                        </div>
+                      )}
+                      {prospect.loyer_mensuel != null && (
+                        <div>
+                          <span className="text-text-secondary text-xs">Loyer mensuel HT</span>
+                          <p className="text-text-primary">{formatCurrency(prospect.loyer_mensuel)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Outils / badges */}
                 {(prospect.simulateur_valorisation || prospect.diaglocal || prospect.guide_recu) && (
                   <div className="flex flex-wrap gap-2">
                     {prospect.simulateur_valorisation && (
                       <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-primary/15 text-primary">
                         <Calculator size={12} />
                         Simulateur
+                        {prospect.simulateur_estimation != null && ` — ${formatCurrency(prospect.simulateur_estimation)}`}
                       </span>
                     )}
                     {prospect.diaglocal && (
@@ -186,6 +277,20 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                   </div>
                 )}
 
+                {/* DiagLocal details */}
+                {prospect.diaglocal && (prospect.diaglocal_adresse || prospect.diaglocal_notes) && (
+                  <div className="p-3 bg-bg-main rounded-lg text-sm space-y-1">
+                    <p className="text-xs font-medium text-text-secondary">DiagLocal</p>
+                    {prospect.diaglocal_adresse && (
+                      <p className="text-text-primary">{prospect.diaglocal_adresse}</p>
+                    )}
+                    {prospect.diaglocal_notes && (
+                      <p className="text-text-secondary whitespace-pre-wrap">{prospect.diaglocal_notes}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Relance */}
                 {prospect.date_relance && (
                   <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
                     isRelanceOverdue(prospect.date_relance)

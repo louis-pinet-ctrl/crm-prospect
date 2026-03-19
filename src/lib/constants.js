@@ -25,6 +25,8 @@ export const SEUIL_MINIMUM_CESSION_FONDS = 2000
 export const SOURCES = [
   { value: 'linkedin', label: 'LinkedIn' },
   { value: 'site_web', label: 'Site web' },
+  { value: 'simulateur_precession', label: 'Simulateur pré-cession' },
+  { value: 'diaglocal', label: 'DiagLocal' },
   { value: 'recommandation', label: 'Recommandation' },
   { value: 'autre', label: 'Autre' },
 ]
@@ -46,6 +48,27 @@ export const TYPES_NOTE = [
 export const MODES_HONORAIRES = [
   { value: 'pourcentage', label: 'Pourcentage' },
   { value: 'forfait', label: 'Forfait' },
+]
+
+export const PROFILS_RESTAURATEUR = [
+  { value: 'primo_accedant', label: 'Primo-accédant' },
+  { value: 'proprietaire_unique', label: 'Propriétaire (1 resto)' },
+  { value: 'multi_etablissements', label: 'Groupe / Multi-établissements' },
+]
+
+export const TYPES_CUISINE = [
+  { value: 'traditionnelle', label: 'Traditionnelle' },
+  { value: 'gastronomique', label: 'Gastronomique' },
+  { value: 'bistronomique', label: 'Bistronomique' },
+  { value: 'brasserie', label: 'Brasserie' },
+  { value: 'fast_food', label: 'Fast-food / Snack' },
+  { value: 'pizzeria', label: 'Pizzeria' },
+  { value: 'asiatique', label: 'Asiatique' },
+  { value: 'italien', label: 'Italien' },
+  { value: 'bar_restaurant', label: 'Bar-restaurant' },
+  { value: 'traiteur', label: 'Traiteur' },
+  { value: 'dark_kitchen', label: 'Dark kitchen' },
+  { value: 'autre', label: 'Autre' },
 ]
 
 export const CA_OBJECTIF = 300000

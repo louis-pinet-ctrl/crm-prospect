@@ -5,6 +5,8 @@ import {
   PRIORITES,
   MODES_HONORAIRES,
   STATUTS,
+  PROFILS_RESTAURATEUR,
+  TYPES_CUISINE,
   SEUIL_MINIMUM_CESSION_FONDS,
 } from '../lib/constants'
 
@@ -28,6 +30,23 @@ const defaultValues = {
   simulateur_valorisation: false,
   diaglocal: false,
   guide_recu: false,
+  // Profil restaurateur
+  profil_restaurateur: 'primo_accedant',
+  nombre_restaurants: 1,
+  type_cuisine: '',
+  nombre_salaries: null,
+  siret: '',
+  ca_annuel_declare: null,
+  // Expert comptable
+  a_expert_comptable: false,
+  nom_expert_comptable: '',
+  // Infos local
+  surface_local_m2: null,
+  loyer_mensuel: null,
+  // Outils résultats
+  diaglocal_adresse: '',
+  diaglocal_notes: '',
+  simulateur_estimation: null,
 }
 
 export default function ProspectForm({ prospect, onSubmit, onCancel }) {
@@ -65,6 +84,9 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
   const setNumber = (field) => (e) =>
     setForm(prev => ({ ...prev, [field]: parseFloat(e.target.value) || 0 }))
 
+  const setNullableNumber = (field) => (e) =>
+    setForm(prev => ({ ...prev, [field]: e.target.value === '' ? null : parseFloat(e.target.value) || 0 }))
+
   const handleSubmit = (e) => {
     e.preventDefault()
     const data = { ...form }
@@ -81,9 +103,12 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
   const inputClass =
     'w-full bg-bg-main border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary'
   const labelClass = 'block text-text-secondary text-xs mb-1'
+  const sectionClass = 'border-t border-border pt-4'
+  const sectionTitle = 'text-sm font-medium text-text-primary mb-3'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* --- Contact --- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Nom *</label>
@@ -184,21 +209,158 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         </div>
       )}
 
-      {form.source === 'recommandation' && (
+      {(form.source === 'recommandation' || form.source === 'autre') && (
         <div>
-          <label className={labelClass}>Détail source</label>
+          <label className={labelClass}>
+            {form.source === 'recommandation' ? 'Recommandé par' : 'Détail source'}
+          </label>
           <input
             type="text"
             value={form.source_detail}
             onChange={set('source_detail')}
-            placeholder="Ex: recommandé par Maître X"
+            placeholder={form.source === 'recommandation' ? 'Ex: recommandé par Maître X' : ''}
             className={inputClass}
           />
         </div>
       )}
 
-      <div className="border-t border-border pt-4">
-        <h4 className="text-sm font-medium text-text-primary mb-3">Honoraires</h4>
+      {/* --- Profil Restaurateur --- */}
+      <div className={sectionClass}>
+        <h4 className={sectionTitle}>Profil restaurateur</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Profil</label>
+            <select
+              value={form.profil_restaurateur}
+              onChange={set('profil_restaurateur')}
+              className={inputClass}
+            >
+              {PROFILS_RESTAURATEUR.map(p => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+          {form.profil_restaurateur === 'multi_etablissements' && (
+            <div>
+              <label className={labelClass}>Nombre de restaurants</label>
+              <input
+                type="number"
+                min="2"
+                value={form.nombre_restaurants}
+                onChange={setNumber('nombre_restaurants')}
+                className={inputClass}
+              />
+            </div>
+          )}
+          <div>
+            <label className={labelClass}>Type de cuisine</label>
+            <select
+              value={form.type_cuisine}
+              onChange={set('type_cuisine')}
+              className={inputClass}
+            >
+              <option value="">— Non renseigné —</option>
+              {TYPES_CUISINE.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Nombre de salariés</label>
+            <input
+              type="number"
+              min="0"
+              value={form.nombre_salaries ?? ''}
+              onChange={setNullableNumber('nombre_salaries')}
+              placeholder="Ex: 8"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>SIRET</label>
+            <input
+              type="text"
+              value={form.siret}
+              onChange={set('siret')}
+              placeholder="Ex: 123 456 789 00012"
+              maxLength={17}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>CA annuel déclaré / Pappers</label>
+            <input
+              type="number"
+              step="1000"
+              value={form.ca_annuel_declare ?? ''}
+              onChange={setNullableNumber('ca_annuel_declare')}
+              placeholder="Ex: 450000"
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* --- Expert Comptable --- */}
+      <div className={sectionClass}>
+        <h4 className={sectionTitle}>Expert-comptable</h4>
+        <div className="space-y-3">
+          <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.a_expert_comptable}
+              onChange={toggle('a_expert_comptable')}
+              className="accent-primary w-4 h-4"
+            />
+            Accompagné par un expert-comptable
+          </label>
+          {form.a_expert_comptable && (
+            <div>
+              <label className={labelClass}>Nom / Cabinet</label>
+              <input
+                type="text"
+                value={form.nom_expert_comptable}
+                onChange={set('nom_expert_comptable')}
+                placeholder="Ex: Cabinet Dupont"
+                className={inputClass}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* --- Infos Local --- */}
+      <div className={sectionClass}>
+        <h4 className={sectionTitle}>Infos local</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Surface (m²)</label>
+            <input
+              type="number"
+              min="0"
+              value={form.surface_local_m2 ?? ''}
+              onChange={setNullableNumber('surface_local_m2')}
+              placeholder="Ex: 120"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Loyer mensuel HT (EUR)</label>
+            <input
+              type="number"
+              step="100"
+              value={form.loyer_mensuel ?? ''}
+              onChange={setNullableNumber('loyer_mensuel')}
+              placeholder="Ex: 3500"
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* --- Honoraires --- */}
+      <div className={sectionClass}>
+        <h4 className={sectionTitle}>Honoraires</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Mode</label>
@@ -249,7 +411,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
                         currency: 'EUR',
                       }).format(ca)}
                       {form.type_dossier === 'cession_fonds' && raw < SEUIL_MINIMUM_CESSION_FONDS && raw > 0 && (
-                        <span className="text-text-secondary text-xs ml-2">(seuil min. 2 000 €)</span>
+                        <span className="text-text-secondary text-xs ml-2">(seuil min. 2 000 EUR)</span>
                       )}
                     </div>
                   )
@@ -271,9 +433,10 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         </div>
       </div>
 
-      <div className="border-t border-border pt-4">
-        <h4 className="text-sm font-medium text-text-primary mb-3">Outils envoyés / utilisés</h4>
-        <div className="flex flex-wrap gap-4">
+      {/* --- Outils envoyés / utilisés --- */}
+      <div className={sectionClass}>
+        <h4 className={sectionTitle}>Outils envoyés / utilisés</h4>
+        <div className="flex flex-wrap gap-4 mb-3">
           <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
             <input
               type="checkbox"
@@ -302,8 +465,54 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
             Guide reçu
           </label>
         </div>
+
+        {/* Résultat simulateur */}
+        {form.simulateur_valorisation && (
+          <div className="mt-3 p-3 bg-bg-main rounded-lg space-y-3">
+            <p className="text-xs text-text-secondary font-medium">Résultat simulateur pré-cession</p>
+            <div>
+              <label className={labelClass}>Estimation valorisation (EUR)</label>
+              <input
+                type="number"
+                step="1000"
+                value={form.simulateur_estimation ?? ''}
+                onChange={setNullableNumber('simulateur_estimation')}
+                placeholder="Ex: 250000"
+                className={inputClass}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Détails DiagLocal */}
+        {form.diaglocal && (
+          <div className="mt-3 p-3 bg-bg-main rounded-lg space-y-3">
+            <p className="text-xs text-text-secondary font-medium">Détails DiagLocal</p>
+            <div>
+              <label className={labelClass}>Adresse du local</label>
+              <input
+                type="text"
+                value={form.diaglocal_adresse}
+                onChange={set('diaglocal_adresse')}
+                placeholder="Ex: 12 rue de la Paix, 75002 Paris"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Notes / Résultat diagnostic</label>
+              <textarea
+                value={form.diaglocal_notes}
+                onChange={set('diaglocal_notes')}
+                rows={3}
+                placeholder="Observations sur le local, points d'attention..."
+                className={inputClass}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* --- Relance --- */}
       <div>
         <label className={labelClass}>Date de relance</label>
         <input

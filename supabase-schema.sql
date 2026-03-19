@@ -13,7 +13,11 @@ CREATE TYPE mode_honoraires_enum AS ENUM (
 );
 
 CREATE TYPE source_enum AS ENUM (
-  'linkedin', 'site_web', 'recommandation', 'autre'
+  'linkedin', 'site_web', 'simulateur_precession', 'diaglocal', 'recommandation', 'autre'
+);
+
+CREATE TYPE profil_restaurateur_enum AS ENUM (
+  'primo_accedant', 'proprietaire_unique', 'multi_etablissements'
 );
 
 CREATE TYPE statut_enum AS ENUM (
@@ -61,8 +65,25 @@ CREATE TABLE prospects (
       ELSE 0
     END
   ) STORED,
+  -- Profil restaurateur
+  profil_restaurateur profil_restaurateur_enum DEFAULT 'primo_accedant',
+  nombre_restaurants INTEGER DEFAULT 1,
+  type_cuisine TEXT,
+  nombre_salaries INTEGER,
+  siret TEXT,
+  ca_annuel_declare NUMERIC,
+  -- Expert comptable
+  a_expert_comptable BOOLEAN DEFAULT FALSE,
+  nom_expert_comptable TEXT,
+  -- Infos local
+  surface_local_m2 NUMERIC,
+  loyer_mensuel NUMERIC,
+  -- Outils
   simulateur_valorisation BOOLEAN DEFAULT FALSE,
+  simulateur_estimation NUMERIC,
   diaglocal BOOLEAN DEFAULT FALSE,
+  diaglocal_adresse TEXT,
+  diaglocal_notes TEXT,
   guide_recu BOOLEAN DEFAULT FALSE,
   source source_enum DEFAULT 'autre',
   source_detail TEXT,
