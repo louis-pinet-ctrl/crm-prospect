@@ -40,6 +40,13 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Recharger les prospects quand la session change (login/logout)
+  useEffect(() => {
+    if (session) {
+      prospectData.reload()
+    }
+  }, [session])
+
   useEffect(() => {
     setSidebarOpen(false)
   }, [location])
