@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Search } from 'lucide-react'
 import {
   TYPES_DOSSIER,
   SOURCES,
@@ -9,6 +10,7 @@ import {
   TYPES_CUISINE,
   SEUIL_MINIMUM_CESSION_FONDS,
 } from '../lib/constants'
+import { fetchCompanyBySiret } from '../lib/pappers'
 
 const defaultValues = {
   nom: '',
@@ -86,6 +88,36 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
 
   const setNullableNumber = (field) => (e) =>
     setForm(prev => ({ ...prev, [field]: e.target.value === '' ? null : parseFloat(e.target.value) || 0 }))
+
+  const [pappersLoading, setPappersLoading] = useState(false)
+  const [pappersError, setPappersError] = useState(null)
+  const [pappersSuccess, setPappersSuccess] = useState(false)
+
+  const handlePappersLookup = async () => {
+    if (!form.siret || form.siret.replace(/\s/g, '').length < 14) {
+      setPappersError('SIRET invalide (14 chiffres requis)')
+      return
+    }
+    setPappersLoading(true)
+    setPappersError(null)
+    setPappersSuccess(false)
+    try {
+      const info = await fetchCompanyBySiret(form.siret)
+      setForm(prev => ({
+        ...prev,
+        etablissement: info.etablissement || prev.etablissement,
+        ca_annuel_declare: info.ca_annuel_declare ?? prev.ca_annuel_declare,
+        nombre_salaries: info.nombre_salaries ?? prev.nombre_salaries,
+        ville: info.ville || prev.ville,
+      }))
+      setPappersSuccess(true)
+      setTimeout(() => setPappersSuccess(false), 3000)
+    } catch (err) {
+      setPappersError(err.message)
+    } finally {
+      setPappersLoading(false)
+    }
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -278,14 +310,35 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
           </div>
           <div>
             <label className={labelClass}>SIRET</label>
-            <input
-              type="text"
-              value={form.siret}
-              onChange={set('siret')}
-              placeholder="Ex: 123 456 789 00012"
-              maxLength={17}
-              className={inputClass}
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={form.siret}
+                onChange={set('siret')}
+                placeholder="Ex: 123 456 789 00012"
+                maxLength={17}
+                className={inputClass + ' flex-1'}
+              />
+              <button
+                type="button"
+                onClick={handlePappersLookup}
+                disabled={pappersLoading}
+                className="px-3 py-2 bg-primary text-bg-main rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                title="Rechercher sur Pappers"
+              >
+                {pappersLoading ? (
+                  <span className="text-xs">...</span>
+                ) : (
+                  <Search size={16} />
+                )}
+              </button>
+            </div>
+            {pappersError && (
+              <p className="text-danger text-xs mt-1">{pappersError}</p>
+            )}
+            {pappersSuccess && (
+              <p className="text-success text-xs mt-1">Données Pappers importées</p>
+            )}
           </div>
           <div>
             <label className={labelClass}>CA annuel déclaré / Pappers</label>

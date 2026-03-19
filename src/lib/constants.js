@@ -71,6 +71,18 @@ export const TYPES_CUISINE = [
   { value: 'autre', label: 'Autre' },
 ]
 
+export const STAGE_PROBABILITY = {
+  prospect_identifie: 0.05,
+  premier_contact: 0.15,
+  diagnostic_rdv: 0.30,
+  relance_en_attente: 0.25,
+  lettre_mission_envoyee: 0.60,
+  mission_en_cours: 0.90,
+  facture: 1.0,
+  cloture: 1.0,
+  perdu_refuse: 0,
+}
+
 export const CA_OBJECTIF = 300000
 
 export function formatCurrency(amount) {
