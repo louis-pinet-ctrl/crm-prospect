@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Kanban,
   List,
+  MessageSquare,
   Bell,
   LogOut,
   Menu,
@@ -16,6 +17,7 @@ import KanbanPage from './pages/KanbanPage'
 import DashboardPage from './pages/DashboardPage'
 import ListPage from './pages/ListPage'
 import LoginPage from './pages/LoginPage'
+import CommentairesPage from './pages/CommentairesPage'
 import ProspectModal from './components/ProspectModal'
 
 export default function App() {
@@ -63,6 +65,7 @@ export default function App() {
     { to: '/', icon: Kanban, label: 'Kanban' },
     { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
     { to: '/list', icon: List, label: 'Liste' },
+    { to: '/commentaires', icon: MessageSquare, label: 'Commentaires' },
   ]
 
   return (
@@ -152,6 +155,10 @@ export default function App() {
           <Route
             path="/dashboard"
             element={<DashboardPage prospects={prospectData.prospects} />}
+          />
+          <Route
+            path="/commentaires"
+            element={<CommentairesPage />}
           />
           <Route
             path="/list"

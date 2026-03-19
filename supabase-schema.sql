@@ -78,12 +78,22 @@ CREATE TABLE notes (
   user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid()
 );
 
--- 4. Index pour les performances
+-- 4. Table commentaires (notes générales)
+CREATE TABLE commentaires (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  contenu TEXT NOT NULL,
+  date_creation TIMESTAMPTZ DEFAULT NOW(),
+  user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid()
+);
+
+-- 5. Index pour les performances
 CREATE INDEX idx_prospects_statut ON prospects(statut);
 CREATE INDEX idx_prospects_date_relance ON prospects(date_relance);
 CREATE INDEX idx_prospects_user_id ON prospects(user_id);
 CREATE INDEX idx_notes_prospect_id ON notes(prospect_id);
 CREATE INDEX idx_notes_user_id ON notes(user_id);
+CREATE INDEX idx_commentaires_user_id ON commentaires(user_id);
+CREATE INDEX idx_commentaires_date ON commentaires(date_creation);
 
 -- 5. Trigger pour date_modification automatique
 CREATE OR REPLACE FUNCTION update_date_modification()
@@ -102,6 +112,7 @@ CREATE TRIGGER trigger_update_date_modification
 -- 6. Row Level Security (RLS)
 ALTER TABLE prospects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE commentaires ENABLE ROW LEVEL SECURITY;
 
 -- Policies pour prospects : l'utilisateur ne voit que ses propres données
 CREATE POLICY "Users can view own prospects"
@@ -132,4 +143,17 @@ CREATE POLICY "Users can insert own notes"
 
 CREATE POLICY "Users can delete own notes"
   ON notes FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Policies pour commentaires
+CREATE POLICY "Users can view own commentaires"
+  ON commentaires FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own commentaires"
+  ON commentaires FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own commentaires"
+  ON commentaires FOR DELETE
   USING (auth.uid() = user_id);

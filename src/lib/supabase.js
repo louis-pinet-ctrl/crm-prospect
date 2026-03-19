@@ -73,6 +73,32 @@ export async function createNote(note) {
   return data
 }
 
+// --- Commentaires ---
+
+export async function fetchCommentaires() {
+  const { data, error } = await supabase
+    .from('commentaires')
+    .select('*')
+    .order('date_creation', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function createCommentaire(contenu) {
+  const { data, error } = await supabase
+    .from('commentaires')
+    .insert({ contenu })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteCommentaire(id) {
+  const { error } = await supabase.from('commentaires').delete().eq('id', id)
+  if (error) throw error
+}
+
 // --- Auth ---
 
 export async function signIn(email, password) {
