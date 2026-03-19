@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Calculator, MapPin, BookOpen } from 'lucide-react'
 import {
   formatCurrency,
   getTypeDossierColor,
@@ -70,6 +70,20 @@ export default function KanbanCard({ prospect, onClick }) {
           </span>
         )}
       </div>
+
+      {(prospect.simulateur_valorisation || prospect.diaglocal || prospect.guide_recu) && (
+        <div className="flex gap-1.5 mt-2">
+          {prospect.simulateur_valorisation && (
+            <Calculator size={12} className="text-primary" title="Simulateur de valorisation" />
+          )}
+          {prospect.diaglocal && (
+            <MapPin size={12} className="text-primary" title="DiagLocal" />
+          )}
+          {prospect.guide_recu && (
+            <BookOpen size={12} className="text-primary" title="Guide reçu" />
+          )}
+        </div>
+      )}
     </div>
   )
 }

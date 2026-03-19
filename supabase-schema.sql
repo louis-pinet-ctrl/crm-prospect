@@ -5,7 +5,7 @@
 
 -- 1. Création des types ENUM
 CREATE TYPE type_dossier_enum AS ENUM (
-  'bail', 'cession', 'franchise', 'liquidation', 'contentieux', 'autre'
+  'cession_fonds', 'cession_droit_bail', 'bail_nu', 'franchise', 'liquidation', 'contentieux', 'autre'
 );
 
 CREATE TYPE mode_honoraires_enum AS ENUM (
@@ -52,11 +52,18 @@ CREATE TABLE prospects (
   montant_forfait NUMERIC DEFAULT 0,
   ca_estime NUMERIC GENERATED ALWAYS AS (
     CASE
-      WHEN mode_honoraires = 'pourcentage' THEN COALESCE(base_calcul, 0) * COALESCE(taux_pourcentage, 1.3) / 100
+      WHEN mode_honoraires = 'pourcentage' THEN
+        CASE
+          WHEN type_dossier = 'cession_fonds' THEN GREATEST(COALESCE(base_calcul, 0) * COALESCE(taux_pourcentage, 1.3) / 100, 2000)
+          ELSE COALESCE(base_calcul, 0) * COALESCE(taux_pourcentage, 1.3) / 100
+        END
       WHEN mode_honoraires = 'forfait' THEN COALESCE(montant_forfait, 0)
       ELSE 0
     END
   ) STORED,
+  simulateur_valorisation BOOLEAN DEFAULT FALSE,
+  diaglocal BOOLEAN DEFAULT FALSE,
+  guide_recu BOOLEAN DEFAULT FALSE,
   source source_enum DEFAULT 'autre',
   source_detail TEXT,
   statut statut_enum DEFAULT 'prospect_identifie',

@@ -11,13 +11,16 @@ export const STATUTS = [
 ]
 
 export const TYPES_DOSSIER = [
-  { value: 'bail', label: 'Bail', color: '#6366f1' },
-  { value: 'cession', label: 'Cession', color: '#8b5cf6' },
+  { value: 'cession_fonds', label: 'Cession de fonds de commerce', color: '#8b5cf6' },
+  { value: 'cession_droit_bail', label: 'Cession de droit au bail', color: '#6366f1' },
+  { value: 'bail_nu', label: 'Bail nu', color: '#3b82f6' },
   { value: 'franchise', label: 'Franchise', color: '#ec4899' },
   { value: 'liquidation', label: 'Liquidation', color: '#ef4444' },
   { value: 'contentieux', label: 'Contentieux', color: '#f97316' },
   { value: 'autre', label: 'Autre', color: '#6b7280' },
 ]
+
+export const SEUIL_MINIMUM_CESSION_FONDS = 2000
 
 export const SOURCES = [
   { value: 'linkedin', label: 'LinkedIn' },

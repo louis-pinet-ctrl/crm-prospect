@@ -5,6 +5,7 @@ import {
   PRIORITES,
   MODES_HONORAIRES,
   STATUTS,
+  SEUIL_MINIMUM_CESSION_FONDS,
 } from '../lib/constants'
 
 const defaultValues = {
@@ -13,7 +14,7 @@ const defaultValues = {
   email: '',
   etablissement: '',
   ville: '',
-  type_dossier: 'bail',
+  type_dossier: 'cession_fonds',
   type_dossier_detail: '',
   mode_honoraires: 'pourcentage',
   taux_pourcentage: 1.3,
@@ -24,6 +25,9 @@ const defaultValues = {
   statut: 'prospect_identifie',
   date_relance: '',
   priorite: 'moyenne',
+  simulateur_valorisation: false,
+  diaglocal: false,
+  guide_recu: false,
 }
 
 export default function ProspectForm({ prospect, onSubmit, onCancel }) {
@@ -38,8 +42,25 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     return defaultValues
   })
 
-  const set = (field) => (e) =>
-    setForm(prev => ({ ...prev, [field]: e.target.value }))
+  const set = (field) => (e) => {
+    const value = e.target.value
+    setForm(prev => {
+      const next = { ...prev, [field]: value }
+      // Auto-set honoraires mode when changing type_dossier
+      if (field === 'type_dossier') {
+        if (value === 'cession_fonds') {
+          next.mode_honoraires = 'pourcentage'
+          next.taux_pourcentage = 1.3
+        } else {
+          next.mode_honoraires = 'forfait'
+        }
+      }
+      return next
+    })
+  }
+
+  const toggle = (field) => () =>
+    setForm(prev => ({ ...prev, [field]: !prev[field] }))
 
   const setNumber = (field) => (e) =>
     setForm(prev => ({ ...prev, [field]: parseFloat(e.target.value) || 0 }))
@@ -216,12 +237,23 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
               </div>
               <div>
                 <label className={labelClass}>CA estimé</label>
-                <div className="text-primary font-medium text-sm py-2">
-                  {new Intl.NumberFormat('fr-FR', {
-                    style: 'currency',
-                    currency: 'EUR',
-                  }).format((form.base_calcul * form.taux_pourcentage) / 100)}
-                </div>
+                {(() => {
+                  const raw = (form.base_calcul * form.taux_pourcentage) / 100
+                  const ca = form.type_dossier === 'cession_fonds'
+                    ? Math.max(raw, SEUIL_MINIMUM_CESSION_FONDS)
+                    : raw
+                  return (
+                    <div className="text-primary font-medium text-sm py-2">
+                      {new Intl.NumberFormat('fr-FR', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      }).format(ca)}
+                      {form.type_dossier === 'cession_fonds' && raw < SEUIL_MINIMUM_CESSION_FONDS && raw > 0 && (
+                        <span className="text-text-secondary text-xs ml-2">(seuil min. 2 000 €)</span>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             </>
           ) : (
@@ -236,6 +268,39 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
               />
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="border-t border-border pt-4">
+        <h4 className="text-sm font-medium text-text-primary mb-3">Outils envoyés / utilisés</h4>
+        <div className="flex flex-wrap gap-4">
+          <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.simulateur_valorisation}
+              onChange={toggle('simulateur_valorisation')}
+              className="accent-primary w-4 h-4"
+            />
+            Simulateur de valorisation
+          </label>
+          <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.diaglocal}
+              onChange={toggle('diaglocal')}
+              className="accent-primary w-4 h-4"
+            />
+            DiagLocal
+          </label>
+          <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.guide_recu}
+              onChange={toggle('guide_recu')}
+              className="accent-primary w-4 h-4"
+            />
+            Guide reçu
+          </label>
         </div>
       </div>
 

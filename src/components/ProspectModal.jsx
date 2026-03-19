@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Trash2, Edit3 } from 'lucide-react'
+import { X, Trash2, Edit3, Calculator, MapPin, BookOpen } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import {
@@ -162,6 +162,29 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                     </p>
                   </div>
                 </div>
+
+                {(prospect.simulateur_valorisation || prospect.diaglocal || prospect.guide_recu) && (
+                  <div className="flex flex-wrap gap-2">
+                    {prospect.simulateur_valorisation && (
+                      <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-primary/15 text-primary">
+                        <Calculator size={12} />
+                        Simulateur
+                      </span>
+                    )}
+                    {prospect.diaglocal && (
+                      <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-primary/15 text-primary">
+                        <MapPin size={12} />
+                        DiagLocal
+                      </span>
+                    )}
+                    {prospect.guide_recu && (
+                      <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-primary/15 text-primary">
+                        <BookOpen size={12} />
+                        Guide reçu
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {prospect.date_relance && (
                   <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
