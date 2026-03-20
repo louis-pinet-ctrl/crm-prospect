@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import { useProspects } from './hooks/useProspects'
-import { onAuthStateChange, signOut, getSession } from './lib/supabase'
+import { onAuthStateChange, signOut, getSession, supabase } from './lib/supabase'
 import { isRelanceOverdue } from './lib/constants'
 import KanbanPage from './pages/KanbanPage'
 import DashboardPage from './pages/DashboardPage'
@@ -190,10 +190,11 @@ export default function App() {
             setSelectedProspect(null)
           }}
           onReload={() => prospectData.reload()}
-          onSelectProspect={(p) => {
-            // Si c'est un objet partiel (depuis DossiersLies), retrouver le complet
-            const full = prospectData.prospects.find(pr => pr.id === p.id)
-            setSelectedProspect(full || p)
+          onSelectProspect={async (p) => {
+            // Charger le prospect complet directement depuis Supabase
+            const { data } = await supabase.from('prospects').select('*').eq('id', p.id).single()
+            setSelectedProspect(data || p)
+            prospectData.reload()
           }}
         />
       )}

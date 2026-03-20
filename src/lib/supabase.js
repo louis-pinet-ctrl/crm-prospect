@@ -55,31 +55,34 @@ export async function deleteProspect(id) {
 
 export async function cloneProspectAsDossier(parentProspect, newTypeDossier) {
   // Copier les infos client, vider les infos dossier
+  // Convertir les chaînes vides en null pour les enums
+  const clean = (val) => val || null
+
   const clone = {
     nom: parentProspect.nom,
-    telephone: parentProspect.telephone,
-    email: parentProspect.email,
-    etablissement: parentProspect.etablissement,
-    ville: parentProspect.ville,
-    siret: parentProspect.siret,
-    profil_restaurateur: parentProspect.profil_restaurateur,
-    nombre_restaurants: parentProspect.nombre_restaurants,
-    type_cuisine: parentProspect.type_cuisine,
+    telephone: parentProspect.telephone || null,
+    email: parentProspect.email || null,
+    etablissement: parentProspect.etablissement || null,
+    ville: parentProspect.ville || null,
+    siret: parentProspect.siret || null,
+    profil_restaurateur: parentProspect.profil_restaurateur || 'primo_accedant',
+    nombre_restaurants: parentProspect.nombre_restaurants || 1,
+    type_cuisine: clean(parentProspect.type_cuisine),
     nombre_salaries: parentProspect.nombre_salaries,
     ca_annuel_declare: parentProspect.ca_annuel_declare,
-    a_expert_comptable: parentProspect.a_expert_comptable,
-    nom_expert_comptable: parentProspect.nom_expert_comptable,
+    a_expert_comptable: parentProspect.a_expert_comptable || false,
+    nom_expert_comptable: parentProspect.nom_expert_comptable || null,
     surface_local_m2: parentProspect.surface_local_m2,
     loyer_mensuel: parentProspect.loyer_mensuel,
-    est_franchise: parentProspect.est_franchise,
-    enseigne_franchise: parentProspect.enseigne_franchise,
-    nombre_franchises: parentProspect.nombre_franchises,
-    intention: parentProspect.intention,
+    est_franchise: parentProspect.est_franchise || false,
+    enseigne_franchise: parentProspect.enseigne_franchise || null,
+    nombre_franchises: parentProspect.nombre_franchises || 1,
+    intention: clean(parentProspect.intention),
     // Nouveau dossier
     type_dossier: newTypeDossier || 'cession_fonds',
     statut: 'prospect_identifie',
     priorite: 'moyenne',
-    source: parentProspect.source,
+    source: parentProspect.source || 'autre',
     // Lien vers le client parent (ou le parent du parent si c'est déjà un clone)
     client_parent_id: parentProspect.client_parent_id || parentProspect.id,
     // Reset des champs dossier
@@ -87,6 +90,7 @@ export async function cloneProspectAsDossier(parentProspect, newTypeDossier) {
     montant_forfait: 0,
     taux_pourcentage: 1.3,
     mode_honoraires: 'pourcentage',
+    complement_honoraires: 0,
     simulateur_valorisation: false,
     simulateur_estimation: null,
     diaglocal: false,
@@ -107,22 +111,37 @@ export async function cloneProspectAsDossier(parentProspect, newTypeDossier) {
 
 export async function fetchDossiersLies(prospectId) {
   // Trouver le "root" client id
-  const { data: self } = await supabase
+  const { data: self, error: selfErr } = await supabase
     .from('prospects')
     .select('id, client_parent_id')
     .eq('id', prospectId)
     .single()
 
-  const rootId = self?.client_parent_id || prospectId
+  if (selfErr || !self) return []
 
-  // Récupérer tous les dossiers liés (parent + enfants)
-  const { data, error } = await supabase
+  const rootId = self.client_parent_id || prospectId
+
+  // Récupérer le parent
+  const { data: parent } = await supabase
     .from('prospects')
     .select('id, nom, type_dossier, statut, ca_estime, date_creation, client_parent_id')
-    .or(`id.eq.${rootId},client_parent_id.eq.${rootId}`)
+    .eq('id', rootId)
+
+  // Récupérer les enfants
+  const { data: children } = await supabase
+    .from('prospects')
+    .select('id, nom, type_dossier, statut, ca_estime, date_creation, client_parent_id')
+    .eq('client_parent_id', rootId)
     .order('date_creation', { ascending: true })
-  if (error) throw error
-  return data.filter(d => d.id !== prospectId) // exclure soi-même
+
+  const all = [...(parent || []), ...(children || [])]
+  // Exclure soi-même, dédupliquer par id
+  const seen = new Set()
+  return all.filter(d => {
+    if (d.id === prospectId || seen.has(d.id)) return false
+    seen.add(d.id)
+    return true
+  })
 }
 
 // --- Doublons ---
