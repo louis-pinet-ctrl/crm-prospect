@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   DndContext,
   DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
+  pointerWithin,
+  rectIntersection,
 } from '@dnd-kit/core'
 import { Plus, Search, Filter, ChevronDown, ChevronRight } from 'lucide-react'
 import KanbanColumn from '../components/KanbanColumn'
@@ -28,8 +29,23 @@ export default function KanbanPage({
   const [collapsedTunnels, setCollapsedTunnels] = useState({})
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
+
+  // Custom collision detection : priorité aux colonnes (droppable), puis aux cards
+  const collisionDetection = useCallback((args) => {
+    // D'abord tester pointerWithin (plus précis pour les colonnes)
+    const pointerCollisions = pointerWithin(args)
+    if (pointerCollisions.length > 0) {
+      // Prioriser les colonnes (statut values) sur les cards (prospect ids)
+      const statutValues = new Set(STATUTS.map(s => s.value))
+      const columnHit = pointerCollisions.find(c => statutValues.has(c.id))
+      if (columnHit) return [columnHit]
+      return pointerCollisions
+    }
+    // Fallback sur rectIntersection si le pointer n'est dans aucune zone
+    return rectIntersection(args)
+  }, [])
 
   const filtered = useMemo(() => {
     return prospects.filter(p => {
@@ -202,7 +218,7 @@ export default function KanbanPage({
       <div className="flex-1 overflow-y-auto">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={collisionDetection}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
