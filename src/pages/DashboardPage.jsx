@@ -294,6 +294,7 @@ export default function DashboardPage({ prospects }) {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* eslint-disable-next-line no-unused-vars */}
         {kpis.map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}

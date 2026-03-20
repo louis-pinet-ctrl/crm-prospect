@@ -45,6 +45,7 @@ export default function App() {
     if (session) {
       prospectData.reload()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
   useEffect(() => {
@@ -109,6 +110,7 @@ export default function App() {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
+          {/* eslint-disable-next-line no-unused-vars */}
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
