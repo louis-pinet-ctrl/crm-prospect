@@ -9,6 +9,7 @@ import {
   PROFILS_RESTAURATEUR,
   TYPES_CUISINE,
   TYPES_PRESCRIPTEUR,
+  INTENTIONS,
   SEUIL_MINIMUM_CESSION_FONDS,
   SUIVI_STATUTS,
   getDateRelanceSuivi,
@@ -25,6 +26,7 @@ const defaultValues = {
   ville: '',
   type_dossier: 'cession_fonds',
   type_dossier_detail: '',
+  intention: '',
   mode_honoraires: 'pourcentage',
   taux_pourcentage: 1.3,
   base_calcul: 0,
@@ -367,7 +369,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Type de dossier</label>
           <select
@@ -380,6 +382,20 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
             ))}
           </select>
         </div>
+        <div>
+          <label className={labelClass}>Intention</label>
+          <select
+            value={form.intention}
+            onChange={set('intention')}
+            className={inputClass}
+          >
+            {INTENTIONS.map(i => (
+              <option key={i.value} value={i.value}>{i.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label className={labelClass}>Source</label>
           <select value={form.source} onChange={set('source')} className={inputClass}>

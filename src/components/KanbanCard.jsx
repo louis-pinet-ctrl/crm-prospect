@@ -1,6 +1,8 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock, MessageCircle } from 'lucide-react'
+import { ScoreBadge } from './ScoreBadge'
+import { calculateScore } from '../lib/scoring'
 import {
   formatCurrency,
   getTypeDossierColor,
@@ -8,6 +10,8 @@ import {
   getTypePrescripteurLabel,
   isRelanceOverdue,
   SUIVI_STATUTS,
+  INTENTIONS,
+  TYPES_CUISINE,
 } from '../lib/constants'
 
 export default function KanbanCard({ prospect, onClick }) {
@@ -28,6 +32,7 @@ export default function KanbanCard({ prospect, onClick }) {
 
   const overdue = isRelanceOverdue(prospect.date_relance)
   const isSuivi = SUIVI_STATUTS.includes(prospect.statut)
+  const { total: prospectScore } = calculateScore(prospect)
 
   return (
     <div
@@ -39,9 +44,12 @@ export default function KanbanCard({ prospect, onClick }) {
       className="bg-bg-card border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-primary/30 transition-colors"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <h4 className="text-sm font-medium text-text-primary truncate">
-          {prospect.nom}
-        </h4>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h4 className="text-sm font-medium text-text-primary truncate">
+            {prospect.nom}
+          </h4>
+          <ScoreBadge score={prospectScore} size="xs" />
+        </div>
         {overdue && (
           <span className="flex items-center gap-1 shrink-0 mt-0.5">
             <AlertCircle size={16} className="text-warning" />
@@ -63,21 +71,41 @@ export default function KanbanCard({ prospect, onClick }) {
       )}
 
       <div className="flex items-center justify-between gap-2">
-        <span
-          className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-          style={{
-            backgroundColor: getTypeDossierColor(prospect.type_dossier) + '25',
-            color: getTypeDossierColor(prospect.type_dossier),
-          }}
-        >
-          {getTypeDossierLabel(prospect.type_dossier)}
-        </span>
+        <div className="flex items-center gap-1 min-w-0">
+          <span
+            className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0"
+            style={{
+              backgroundColor: getTypeDossierColor(prospect.type_dossier) + '25',
+              color: getTypeDossierColor(prospect.type_dossier),
+            }}
+          >
+            {getTypeDossierLabel(prospect.type_dossier)}
+          </span>
+          {prospect.intention && (() => {
+            const intent = INTENTIONS.find(i => i.value === prospect.intention)
+            return intent ? (
+              <span
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
+                style={{ backgroundColor: intent.color + '20', color: intent.color }}
+              >
+                {intent.label}
+              </span>
+            ) : null
+          })()}
+        </div>
         {prospect.ca_estime > 0 && (
-          <span className="text-xs font-medium text-primary">
+          <span className="text-xs font-medium text-primary shrink-0">
             {formatCurrency(prospect.ca_estime)}
           </span>
         )}
       </div>
+      {/* Cuisine type */}
+      {prospect.type_cuisine && (
+        <p className="text-[10px] text-text-secondary mt-1">
+          {TYPES_CUISINE.find(t => t.value === prospect.type_cuisine)?.label}
+          {prospect.nombre_salaries != null && ` · ${prospect.nombre_salaries} sal.`}
+        </p>
+      )}
 
       {/* Prescripteur badge */}
       {prospect.statut === 'prescripteur' && prospect.type_prescripteur && (

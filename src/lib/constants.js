@@ -103,6 +103,13 @@ export const RESULTATS_INTERACTION = [
   { value: 'info_envoyee', label: 'Info envoyée' },
 ]
 
+export const INTENTIONS = [
+  { value: '', label: '— Inconnu —' },
+  { value: 'cedant', label: 'Cédant', color: '#f97316', icon: 'ArrowUpRight' },
+  { value: 'acquereur', label: 'Acquéreur', color: '#3b82f6', icon: 'ArrowDownLeft' },
+  { value: 'les_deux', label: 'Cédant + Acquéreur', color: '#8b5cf6', icon: 'ArrowLeftRight' },
+]
+
 export const MODES_HONORAIRES = [
   { value: 'pourcentage', label: 'Pourcentage' },
   { value: 'forfait', label: 'Forfait' },

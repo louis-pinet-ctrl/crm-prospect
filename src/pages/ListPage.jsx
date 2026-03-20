@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { Plus, Search, ArrowUpDown, AlertCircle } from 'lucide-react'
 import RelancesWidget from '../components/RelancesWidget'
+import { ScoreBadge } from '../components/ScoreBadge'
+import { calculateScore } from '../lib/scoring'
 import {
   STATUTS,
   TYPES_DOSSIER,
@@ -73,13 +75,14 @@ export default function ListPage({
     )
   }
 
-  const SortHeader = ({ field, children }) => (
+  const sortHeader = (field, label) => (
     <th
+      key={field}
       className="text-left text-xs font-medium text-text-secondary px-4 py-3 cursor-pointer hover:text-text-primary select-none"
       onClick={() => toggleSort(field)}
     >
       <span className="flex items-center gap-1">
-        {children}
+        {label}
         {sortField === field && (
           <ArrowUpDown size={12} className="text-primary" />
         )}
@@ -148,20 +151,21 @@ export default function ListPage({
         <table className="w-full min-w-[800px]">
           <thead className="border-b border-border">
             <tr>
-              <SortHeader field="nom">Nom</SortHeader>
-              <SortHeader field="etablissement">Établissement</SortHeader>
-              <SortHeader field="ville">Ville</SortHeader>
+              {sortHeader('nom', 'Nom')}
+              {sortHeader('etablissement', 'Établissement')}
+              {sortHeader('ville', 'Ville')}
               <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Type</th>
               <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Statut</th>
-              <SortHeader field="ca_estime">CA estimé</SortHeader>
-              <SortHeader field="date_relance">Relance</SortHeader>
+              {sortHeader('ca_estime', 'CA estimé')}
+              {sortHeader('date_relance', 'Relance')}
               <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Priorité</th>
+              <th className="text-left text-xs font-medium text-text-secondary px-4 py-3">Score</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-8 text-text-secondary text-sm">
+                <td colSpan={9} className="text-center py-8 text-text-secondary text-sm">
                   Aucun prospect trouvé
                 </td>
               </tr>
@@ -219,6 +223,9 @@ export default function ListPage({
                       >
                         {getLabel(PRIORITES, p.priorite)}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <ScoreBadge score={calculateScore(p).total} size="xs" />
                     </td>
                   </tr>
                 )

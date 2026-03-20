@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import ProspectSummary from './ProspectSummary'
-import { createNote } from '../lib/supabase'
+import { ScoreBreakdown } from './ScoreBadge'
+import { createNote, fetchNotes } from '../lib/supabase'
+import { calculateScore } from '../lib/scoring'
 import {
   formatCurrency,
   getTypeDossierLabel,
@@ -15,6 +17,7 @@ import {
   PROFILS_RESTAURATEUR,
   TYPES_CUISINE,
   SUIVI_STATUTS,
+  INTENTIONS,
   isRelanceOverdue,
 } from '../lib/constants'
 
@@ -36,6 +39,15 @@ function formatWhatsAppUrl(phone) {
 export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, onAdd, onReload }) {
   const [editing, setEditing] = useState(!prospect)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [scoreResult, setScoreResult] = useState(null)
+
+  // Calculer le score quand on ouvre la fiche
+  useEffect(() => {
+    if (!prospect?.id) return
+    fetchNotes(prospect.id).then(notes => {
+      setScoreResult(calculateScore(prospect, notes))
+    }).catch(() => {})
+  }, [prospect])
 
   const isNew = !prospect
 
@@ -133,6 +145,9 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
               {/* AI-like summary */}
               <ProspectSummary prospect={prospect} />
 
+              {/* Score */}
+              <ScoreBreakdown result={scoreResult} />
+
               {/* Read-only view */}
               <div className="space-y-4 mb-6">
                 <div className="flex flex-wrap gap-2 mb-4">
@@ -157,6 +172,17 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                   >
                     {getLabel(PRIORITES, prospect.priorite)}
                   </span>
+                  {prospect.intention && (() => {
+                    const intent = INTENTIONS.find(i => i.value === prospect.intention)
+                    return intent ? (
+                      <span
+                        className="text-xs font-medium px-2.5 py-1 rounded-full"
+                        style={{ backgroundColor: intent.color + '20', color: intent.color }}
+                      >
+                        {intent.label}
+                      </span>
+                    ) : null
+                  })()}
                 </div>
 
                 {/* Contact */}
