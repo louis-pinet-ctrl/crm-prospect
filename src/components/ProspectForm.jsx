@@ -56,6 +56,10 @@ const defaultValues = {
   // Infos local
   surface_local_m2: null,
   loyer_mensuel: null,
+  // Honoraires ajustements
+  complement_honoraires: 0,
+  honoraires_override: null,
+  honoraires_commentaire: '',
   // Outils résultats
   diaglocal_adresse: '',
   diaglocal_notes: '',
@@ -680,20 +684,20 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
                 />
               </div>
               <div>
-                <label className={labelClass}>CA estimé</label>
+                <label className={labelClass}>Calcul auto</label>
                 {(() => {
                   const raw = (form.base_calcul * form.taux_pourcentage) / 100
                   const ca = form.type_dossier === 'cession_fonds'
                     ? Math.max(raw, SEUIL_MINIMUM_CESSION_FONDS)
                     : raw
                   return (
-                    <div className="text-primary font-medium text-sm py-2">
+                    <div className="text-text-secondary text-sm py-2">
                       {new Intl.NumberFormat('fr-FR', {
                         style: 'currency',
                         currency: 'EUR',
                       }).format(ca)}
                       {form.type_dossier === 'cession_fonds' && raw < SEUIL_MINIMUM_CESSION_FONDS && raw > 0 && (
-                        <span className="text-text-secondary text-xs ml-2">(seuil min. 2 000 EUR)</span>
+                        <span className="text-xs ml-2">(seuil min. 2 000 EUR)</span>
                       )}
                     </div>
                   )
@@ -711,6 +715,85 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
                 className={inputClass}
               />
             </div>
+          )}
+        </div>
+
+        {/* Complément + Override */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+          <div>
+            <label className={labelClass}>Complément honoraires (EUR)</label>
+            <input
+              type="number"
+              step="100"
+              value={form.complement_honoraires}
+              onChange={setNumber('complement_honoraires')}
+              placeholder="Ex: 3500"
+              className={inputClass}
+            />
+            <p className="text-[10px] text-text-secondary mt-0.5">S'ajoute au calcul auto (dossier complexe, multi-fonds...)</p>
+          </div>
+          <div>
+            <label className={labelClass}>Override total (EUR)</label>
+            <input
+              type="number"
+              step="100"
+              value={form.honoraires_override ?? ''}
+              onChange={setNullableNumber('honoraires_override')}
+              placeholder="Laisser vide = calcul auto"
+              className={inputClass}
+            />
+            <p className="text-[10px] text-text-secondary mt-0.5">Force le montant final (ignore le calcul auto)</p>
+          </div>
+        </div>
+
+        {/* Commentaire honoraires */}
+        {(form.complement_honoraires > 0 || form.honoraires_override != null) && (
+          <div className="mt-3">
+            <label className={labelClass}>Motif / commentaire</label>
+            <input
+              type="text"
+              value={form.honoraires_commentaire}
+              onChange={set('honoraires_commentaire')}
+              placeholder="Ex: Dossier complexe, 2 fonds de commerce"
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {/* Résumé final */}
+        <div className="mt-3 p-3 bg-bg-main rounded-lg">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-text-secondary">Honoraires finaux HT</span>
+            {(() => {
+              let base
+              if (form.mode_honoraires === 'pourcentage') {
+                const raw = (form.base_calcul * form.taux_pourcentage) / 100
+                base = form.type_dossier === 'cession_fonds'
+                  ? Math.max(raw, SEUIL_MINIMUM_CESSION_FONDS)
+                  : raw
+              } else {
+                base = form.montant_forfait || 0
+              }
+              const total = form.honoraires_override != null
+                ? form.honoraires_override
+                : base + (form.complement_honoraires || 0)
+              return (
+                <span className="text-primary font-bold text-sm">
+                  {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(total)}
+                  {form.honoraires_override != null && (
+                    <span className="text-text-secondary text-[10px] ml-1 font-normal">(forcé)</span>
+                  )}
+                  {form.honoraires_override == null && form.complement_honoraires > 0 && (
+                    <span className="text-text-secondary text-[10px] ml-1 font-normal">
+                      (dont +{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(form.complement_honoraires)} complément)
+                    </span>
+                  )}
+                </span>
+              )
+            })()}
+          </div>
+          {form.honoraires_commentaire && (
+            <p className="text-[10px] text-text-secondary mt-1">{form.honoraires_commentaire}</p>
           )}
         </div>
       </div>

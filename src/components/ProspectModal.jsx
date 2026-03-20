@@ -278,10 +278,21 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                     </p>
                   </div>
                   <div>
-                    <span className="text-text-secondary text-xs">CA estimé</span>
+                    <span className="text-text-secondary text-xs">Honoraires HT</span>
                     <p className="text-primary font-medium">
                       {formatCurrency(prospect.ca_estime)}
+                      {prospect.honoraires_override != null && (
+                        <span className="text-text-secondary text-[10px] ml-1 font-normal">(forcé)</span>
+                      )}
                     </p>
+                    {prospect.complement_honoraires > 0 && (
+                      <p className="text-text-secondary text-[10px]">
+                        dont +{formatCurrency(prospect.complement_honoraires)} complément
+                      </p>
+                    )}
+                    {prospect.honoraires_commentaire && (
+                      <p className="text-text-secondary text-[10px]">{prospect.honoraires_commentaire}</p>
+                    )}
                   </div>
                 </div>
 
