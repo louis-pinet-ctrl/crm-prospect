@@ -223,6 +223,44 @@ export async function updateProspectAfterInteraction(prospectId, typeNote, dateI
   if (error) throw error
 }
 
+// --- Factures ---
+
+export async function fetchFactures(prospectId) {
+  const { data, error } = await supabase
+    .from('factures')
+    .select('*')
+    .eq('prospect_id', prospectId)
+    .order('date_facture', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createFacture(facture) {
+  const { data, error } = await supabase
+    .from('factures')
+    .insert(facture)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateFacture(id, updates) {
+  const { data, error } = await supabase
+    .from('factures')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteFacture(id) {
+  const { error } = await supabase.from('factures').delete().eq('id', id)
+  if (error) throw error
+}
+
 // --- Commentaires ---
 
 export async function fetchCommentaires() {

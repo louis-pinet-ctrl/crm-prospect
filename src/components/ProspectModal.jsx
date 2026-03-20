@@ -4,6 +4,7 @@ import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import ProspectSummary from './ProspectSummary'
 import DossiersLies from './DossiersLies'
+import FacturesSection from './FacturesSection'
 import { ScoreBreakdown } from './ScoreBadge'
 import { createNote, fetchNotes, updateProspectAfterInteraction } from '../lib/supabase'
 import { calculateScore } from '../lib/scoring'
@@ -485,6 +486,9 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                   </div>
                 )}
               </div>
+
+              {/* Facturation */}
+              <FacturesSection prospectId={prospect.id} caEstime={prospect.ca_estime} />
 
               {/* Dossiers liés */}
               <DossiersLies
