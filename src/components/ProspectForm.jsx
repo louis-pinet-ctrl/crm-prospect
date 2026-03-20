@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, ClipboardPaste, X, Check } from 'lucide-react'
 import {
   TYPES_DOSSIER,
   SOURCES,
@@ -14,6 +14,7 @@ import {
   getDateRelanceSuivi,
 } from '../lib/constants'
 import { fetchCompanyBySiret } from '../lib/pappers'
+import { parseEmailText } from '../lib/emailParser'
 
 const defaultValues = {
   nom: '',
@@ -105,6 +106,47 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
   const setNullableNumber = (field) => (e) =>
     setForm(prev => ({ ...prev, [field]: e.target.value === '' ? null : parseFloat(e.target.value) || 0 }))
 
+  const [showPasteZone, setShowPasteZone] = useState(false)
+  const [pasteText, setPasteText] = useState('')
+  const [pasteResult, setPasteResult] = useState(null)
+
+  const handleParseEmail = () => {
+    if (!pasteText.trim()) return
+    const parsed = parseEmailText(pasteText)
+    const fieldsFound = Object.keys(parsed)
+    if (fieldsFound.length === 0) {
+      setPasteResult({ success: false, message: 'Aucune info détectée dans ce texte.' })
+      return
+    }
+    setForm(prev => {
+      const next = { ...prev }
+      // Ne remplit que les champs vides ou par défaut
+      if (parsed.nom && !prev.nom) next.nom = parsed.nom
+      if (parsed.email && !prev.email) next.email = parsed.email
+      if (parsed.telephone && !prev.telephone) next.telephone = parsed.telephone
+      if (parsed.etablissement && !prev.etablissement) next.etablissement = parsed.etablissement
+      if (parsed.ville && !prev.ville) next.ville = parsed.ville
+      if (parsed.siret && !prev.siret) next.siret = parsed.siret
+      if (parsed.surface_local_m2 != null && !prev.surface_local_m2) next.surface_local_m2 = parsed.surface_local_m2
+      if (parsed.loyer_mensuel != null && !prev.loyer_mensuel) next.loyer_mensuel = parsed.loyer_mensuel
+      if (parsed.nombre_salaries != null && prev.nombre_salaries == null) next.nombre_salaries = parsed.nombre_salaries
+      if (parsed.adresse && !prev.diaglocal_adresse) next.diaglocal_adresse = parsed.adresse
+      return next
+    })
+    const labels = {
+      nom: 'Nom', email: 'Email', telephone: 'Téléphone', etablissement: 'Établissement',
+      ville: 'Ville', siret: 'SIRET', surface_local_m2: 'Surface', loyer_mensuel: 'Loyer',
+      nombre_salaries: 'Salariés', adresse: 'Adresse',
+    }
+    const found = fieldsFound.map(f => labels[f] || f).join(', ')
+    setPasteResult({ success: true, message: `Détecté : ${found}` })
+    setTimeout(() => {
+      setPasteResult(null)
+      setShowPasteZone(false)
+      setPasteText('')
+    }, 3000)
+  }
+
   const [pappersLoading, setPappersLoading] = useState(false)
   const [pappersError, setPappersError] = useState(null)
   const [pappersSuccess, setPappersSuccess] = useState(false)
@@ -158,6 +200,53 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* --- Coller un email --- */}
+      {!showPasteZone ? (
+        <button
+          type="button"
+          onClick={() => setShowPasteZone(true)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-border rounded-lg text-sm text-text-secondary hover:border-primary hover:text-primary transition-colors"
+        >
+          <ClipboardPaste size={16} />
+          Coller un email pour remplir auto
+        </button>
+      ) : (
+        <div className="p-3 bg-bg-main border border-border rounded-lg space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-text-secondary">
+              Collez le contenu d'un email ou d'une signature
+            </span>
+            <button type="button" onClick={() => { setShowPasteZone(false); setPasteText(''); setPasteResult(null) }}>
+              <X size={14} className="text-text-secondary hover:text-text-primary" />
+            </button>
+          </div>
+          <textarea
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            rows={5}
+            placeholder={"Ex:\nBonjour Maître,\nJe suis Jean Dupont, gérant du Restaurant Le Petit Bistrot.\nTéléphone : 06 12 34 56 78\njean.dupont@email.com\n12 rue de la Paix, 75002 Paris"}
+            className="w-full bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary resize-none"
+            autoFocus
+          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleParseEmail}
+              disabled={!pasteText.trim()}
+              className="flex items-center gap-1.5 bg-primary text-bg-main font-medium px-3 py-1.5 rounded-lg text-xs hover:bg-primary-hover transition-colors disabled:opacity-50"
+            >
+              <Check size={14} />
+              Extraire les infos
+            </button>
+            {pasteResult && (
+              <span className={`text-xs ${pasteResult.success ? 'text-success' : 'text-warning'}`}>
+                {pasteResult.message}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* --- Contact --- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
