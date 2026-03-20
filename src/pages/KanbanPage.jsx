@@ -7,10 +7,10 @@ import {
   useSensors,
   closestCorners,
 } from '@dnd-kit/core'
-import { Plus, Search, Filter } from 'lucide-react'
+import { Plus, Search, Filter, ChevronDown, ChevronRight } from 'lucide-react'
 import KanbanColumn from '../components/KanbanColumn'
 import KanbanCard from '../components/KanbanCard'
-import { STATUTS, TYPES_DOSSIER, SOURCES, PRIORITES } from '../lib/constants'
+import { STATUTS, TUNNELS, TYPES_DOSSIER, SOURCES, PRIORITES } from '../lib/constants'
 
 export default function KanbanPage({
   prospects,
@@ -25,6 +25,7 @@ export default function KanbanPage({
   const [filterPriorite, setFilterPriorite] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [activeId, setActiveId] = useState(null)
+  const [collapsedTunnels, setCollapsedTunnels] = useState({})
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -51,7 +52,6 @@ export default function KanbanPage({
     filtered.forEach(p => {
       if (map[p.statut]) map[p.statut].push(p)
     })
-    // Sort by position_kanban within each column
     Object.values(map).forEach(arr => arr.sort((a, b) => a.position_kanban - b.position_kanban))
     return map
   }, [filtered])
@@ -74,12 +74,10 @@ export default function KanbanPage({
     const prospect = prospects.find(p => p.id === prospectId)
     if (!prospect) return
 
-    // Find target column - over.id could be a column or a card
     let targetStatut = null
     if (STATUTS.find(s => s.value === over.id)) {
       targetStatut = over.id
     } else {
-      // Dropped on a card — find which column it belongs to
       const targetProspect = prospects.find(p => p.id === over.id)
       if (targetProspect) targetStatut = targetProspect.statut
     }
@@ -92,6 +90,14 @@ export default function KanbanPage({
     } catch (err) {
       console.error('Erreur lors du déplacement:', err)
     }
+  }
+
+  const toggleTunnel = (tunnelId) => {
+    setCollapsedTunnels(prev => ({ ...prev, [tunnelId]: !prev[tunnelId] }))
+  }
+
+  const getTunnelCount = (tunnel) => {
+    return tunnel.statuts.reduce((sum, s) => sum + (columnMap[s]?.length || 0), 0)
   }
 
   if (loading) {
@@ -183,23 +189,70 @@ export default function KanbanPage({
         </div>
       )}
 
-      {/* Kanban board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
+      {/* Kanban board - 3 tunnels */}
+      <div className="flex-1 overflow-y-auto">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4 h-full min-w-max">
-            {STATUTS.map(statut => (
-              <KanbanColumn
-                key={statut.value}
-                statut={statut}
-                prospects={columnMap[statut.value] || []}
-                onSelectProspect={onSelectProspect}
-              />
-            ))}
+          <div className="flex flex-col gap-1">
+            {TUNNELS.map(tunnel => {
+              const isCollapsed = collapsedTunnels[tunnel.id]
+              const count = getTunnelCount(tunnel)
+              const tunnelStatuts = STATUTS.filter(s => tunnel.statuts.includes(s.value))
+
+              return (
+                <div key={tunnel.id}>
+                  {/* Tunnel header */}
+                  <button
+                    onClick={() => toggleTunnel(tunnel.id)}
+                    className="w-full flex items-center gap-3 px-6 py-3 hover:bg-bg-main/50 transition-colors border-b border-border"
+                  >
+                    <div
+                      className="w-1 h-6 rounded-full"
+                      style={{ backgroundColor: tunnel.color }}
+                    />
+                    {isCollapsed
+                      ? <ChevronRight size={16} className="text-text-secondary" />
+                      : <ChevronDown size={16} className="text-text-secondary" />
+                    }
+                    <h3 className="text-sm font-semibold text-text-primary">
+                      {tunnel.label}
+                    </h3>
+                    <span className="text-xs text-text-secondary">
+                      {tunnel.description}
+                    </span>
+                    <span
+                      className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: tunnel.color + '20',
+                        color: tunnel.color,
+                      }}
+                    >
+                      {count} prospect{count !== 1 ? 's' : ''}
+                    </span>
+                  </button>
+
+                  {/* Tunnel columns */}
+                  {!isCollapsed && (
+                    <div className="overflow-x-auto px-6 py-4">
+                      <div className="flex gap-4 min-w-max">
+                        {tunnelStatuts.map(statut => (
+                          <KanbanColumn
+                            key={statut.value}
+                            statut={statut}
+                            prospects={columnMap[statut.value] || []}
+                            onSelectProspect={onSelectProspect}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           <DragOverlay>

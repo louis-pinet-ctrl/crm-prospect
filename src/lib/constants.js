@@ -10,6 +10,30 @@ export const STATUTS = [
   { value: 'perdu_refuse', label: 'Perdu / Refusé', order: 9 },
 ]
 
+export const TUNNELS = [
+  {
+    id: 'prospection',
+    label: 'Prospection',
+    description: 'Premiers échanges avec le prospect',
+    color: '#3b82f6',
+    statuts: ['prospect_identifie', 'premier_contact', 'diagnostic_rdv'],
+  },
+  {
+    id: 'closing',
+    label: 'Closing',
+    description: 'Du deal qualifié à la signature',
+    color: '#8b5cf6',
+    statuts: ['relance_en_attente', 'lettre_mission_envoyee', 'mission_en_cours', 'facture'],
+  },
+  {
+    id: 'suivi',
+    label: 'Suivi & Prescripteurs',
+    description: 'Suivi long terme, prescripteurs à relancer',
+    color: '#f59e0b',
+    statuts: ['cloture', 'perdu_refuse'],
+  },
+]
+
 export const TYPES_DOSSIER = [
   { value: 'cession_fonds', label: 'Cession de fonds de commerce', color: '#8b5cf6' },
   { value: 'cession_droit_bail', label: 'Cession de droit au bail', color: '#6366f1' },
