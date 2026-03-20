@@ -235,15 +235,23 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const data = { ...form }
+    // Champs vides → null pour les enums et dates
     if (!data.date_relance) data.date_relance = null
     if (!data.type_prescripteur) data.type_prescripteur = null
     if (!data.date_derniere_interaction) data.date_derniere_interaction = null
-    // Remove computed field
+    if (!data.intention) data.intention = null
+    if (!data.type_cuisine) data.type_cuisine = null
+    if (!data.source_detail) data.source_detail = null
+    if (!data.type_dossier_detail) data.type_dossier_detail = null
+    if (!data.honoraires_commentaire) data.honoraires_commentaire = null
+    if (!data.enseigne_franchise) data.enseigne_franchise = null
+    // Remove computed/system fields
     delete data.ca_estime
     delete data.id
     delete data.date_creation
     delete data.date_modification
     delete data.user_id
+    delete data.position_kanban
 
     // Vérifier doublons si nouveau prospect et pas déjà averti
     if (!prospect && !duplicateWarning) {
