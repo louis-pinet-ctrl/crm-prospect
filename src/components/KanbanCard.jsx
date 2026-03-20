@@ -1,13 +1,12 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Store, FolderOpen } from 'lucide-react'
+import { AlertCircle, MessageCircle, Mail, Store, FolderOpen } from 'lucide-react'
 import { ScoreBadge } from './ScoreBadge'
 import { calculateScore } from '../lib/scoring'
 import {
   formatCurrency,
   getTypeDossierColor,
   getTypeDossierLabel,
-  getTypePrescripteurLabel,
   isRelanceOverdue,
   SUIVI_STATUTS,
   INTENTIONS,
@@ -33,6 +32,8 @@ export default function KanbanCard({ prospect, onClick }) {
   const overdue = isRelanceOverdue(prospect.date_relance)
   const isSuivi = SUIVI_STATUTS.includes(prospect.statut)
   const { total: prospectScore } = calculateScore(prospect)
+  const cuisineLabel = TYPES_CUISINE.find(t => t.value === prospect.type_cuisine)?.label
+  const intentionObj = prospect.intention ? INTENTIONS.find(i => i.value === prospect.intention) : null
 
   return (
     <div
@@ -43,37 +44,27 @@ export default function KanbanCard({ prospect, onClick }) {
       onClick={() => onClick(prospect)}
       className="bg-bg-card border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-primary/30 transition-colors"
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <h4 className="text-sm font-medium text-text-primary truncate">
-            {prospect.nom}
-          </h4>
+      {/* Ligne 1 : Nom + score + alerte relance */}
+      <div className="flex items-center justify-between gap-1.5 mb-1">
+        <h4 className="text-sm font-medium text-text-primary truncate">{prospect.nom}</h4>
+        <div className="flex items-center gap-1 shrink-0">
           <ScoreBadge score={prospectScore} size="xs" />
+          {overdue && <AlertCircle size={14} className="text-warning" />}
         </div>
-        {overdue && (
-          <span className="flex items-center gap-1 shrink-0 mt-0.5">
-            <AlertCircle size={16} className="text-warning" />
-            {isSuivi && (
-              <span className="text-[10px] font-medium text-warning">Relance due</span>
-            )}
-          </span>
-        )}
       </div>
 
-      {prospect.etablissement && (
-        <p className="text-xs text-text-secondary truncate mb-1">
-          {prospect.etablissement}
+      {/* Ligne 2 : Établissement + ville en une ligne */}
+      {(prospect.etablissement || prospect.ville) && (
+        <p className="text-[11px] text-text-secondary truncate mb-1.5">
+          {[prospect.etablissement, prospect.ville].filter(Boolean).join(' — ')}
         </p>
       )}
 
-      {prospect.ville && (
-        <p className="text-xs text-text-secondary mb-2">{prospect.ville}</p>
-      )}
-
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1 min-w-0">
+      {/* Ligne 3 : Badges (type dossier + intention) + CA */}
+      <div className="flex items-center justify-between gap-1.5 mb-1.5">
+        <div className="flex items-center gap-1 min-w-0 flex-wrap">
           <span
-            className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0"
+            className="text-[10px] font-medium px-1.5 py-0.5 rounded-full leading-none"
             style={{
               backgroundColor: getTypeDossierColor(prospect.type_dossier) + '25',
               color: getTypeDossierColor(prospect.type_dossier),
@@ -81,88 +72,50 @@ export default function KanbanCard({ prospect, onClick }) {
           >
             {getTypeDossierLabel(prospect.type_dossier)}
           </span>
-          {prospect.intention && (() => {
-            const intent = INTENTIONS.find(i => i.value === prospect.intention)
-            return intent ? (
-              <span
-                className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
-                style={{ backgroundColor: intent.color + '20', color: intent.color }}
-              >
-                {intent.label}
-              </span>
-            ) : null
-          })()}
+          {intentionObj && (
+            <span
+              className="text-[10px] font-medium px-1.5 py-0.5 rounded-full leading-none"
+              style={{ backgroundColor: intentionObj.color + '20', color: intentionObj.color }}
+            >
+              {intentionObj.label}
+            </span>
+          )}
         </div>
         {prospect.ca_estime > 0 && (
-          <span className="text-xs font-medium text-primary shrink-0">
+          <span className="text-xs font-semibold text-primary shrink-0">
             {formatCurrency(prospect.ca_estime)}
           </span>
         )}
       </div>
-      {/* Client récurrent */}
-      {prospect.client_parent_id && (
-        <div className="flex items-center gap-1 mt-1">
-          <FolderOpen size={10} className="text-purple-400" />
-          <span className="text-[10px] font-medium text-purple-400">Client récurrent</span>
-        </div>
-      )}
 
-      {/* Profil resto */}
-      {(prospect.type_cuisine || prospect.est_franchise) && (
-        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-          {prospect.type_cuisine && (
-            <span className="text-[10px] text-text-secondary">
-              {TYPES_CUISINE.find(t => t.value === prospect.type_cuisine)?.label}
-            </span>
+      {/* Ligne 4 : Profil compact (cuisine · franchise · salariés · client récurrent) */}
+      {(cuisineLabel || prospect.est_franchise || prospect.client_parent_id) && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {cuisineLabel && (
+            <span className="text-[10px] text-text-secondary">{cuisineLabel}</span>
           )}
           {prospect.est_franchise && (
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-pink-500/15 text-pink-400 flex items-center gap-0.5">
-              <Store size={9} />
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-pink-500/15 text-pink-400 inline-flex items-center gap-0.5 leading-none">
+              <Store size={8} />
               {prospect.enseigne_franchise || 'Franchise'}
               {prospect.nombre_franchises > 1 && ` ×${prospect.nombre_franchises}`}
             </span>
           )}
-          {prospect.nombre_salaries != null && (
+          {prospect.nombre_salaries != null && !prospect.est_franchise && (
             <span className="text-[10px] text-text-secondary">· {prospect.nombre_salaries} sal.</span>
           )}
-        </div>
-      )}
-
-      {/* Prescripteur badge */}
-      {prospect.statut === 'prescripteur' && prospect.type_prescripteur && (
-        <div className="flex items-center gap-1.5 mt-2">
-          <UserCheck size={12} className="text-amber-400" />
-          <span className="text-[10px] font-medium text-amber-400">
-            {getTypePrescripteurLabel(prospect.type_prescripteur)}
-          </span>
-          {prospect.nombre_deals_apportes > 0 && (
-            <span className="text-[10px] text-text-secondary ml-auto">
-              {prospect.nombre_deals_apportes} deal{prospect.nombre_deals_apportes > 1 ? 's' : ''}
+          {prospect.client_parent_id && (
+            <span className="text-[10px] font-medium text-purple-400 inline-flex items-center gap-0.5">
+              <FolderOpen size={8} />
+              Récurrent
             </span>
           )}
         </div>
       )}
 
-      {/* Suivi tunnel: dernière interaction + nb relances */}
-      {isSuivi && (
-        <div className="flex items-center gap-3 mt-2 text-[10px] text-text-secondary">
-          {prospect.date_derniere_interaction && (
-            <span className="flex items-center gap-1">
-              <Clock size={10} />
-              {new Date(prospect.date_derniere_interaction).toLocaleDateString('fr-FR')}
-            </span>
-          )}
-          {prospect.nombre_relances_effectuees > 0 && (
-            <span className="flex items-center gap-1">
-              <RefreshCw size={10} />
-              {prospect.nombre_relances_effectuees} relance{prospect.nombre_relances_effectuees > 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-      )}
-
-      {(prospect.simulateur_valorisation || prospect.diaglocal || prospect.guide_recu || prospect.telephone || prospect.email) && (
-        <div className="flex items-center gap-1.5 mt-2">
+      {/* Ligne 5 : Actions rapides (WhatsApp, Email) — toujours en bas */}
+      {(prospect.telephone || prospect.email) && (
+        <div className="flex items-center gap-2 mt-2 pt-1.5 border-t border-border/50">
           {prospect.telephone && (() => {
             const digits = prospect.telephone.replace(/[\s./-]/g, '')
             const waNum = digits.startsWith('0') && digits.length === 10
@@ -175,8 +128,9 @@ export default function KanbanCard({ prospect, onClick }) {
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 title="WhatsApp"
+                className="p-1 rounded hover:bg-green-500/20 transition-colors"
               >
-                <MessageCircle size={12} className="text-green-400 hover:text-green-300" />
+                <MessageCircle size={13} className="text-green-400" />
               </a>
             )
           })()}
@@ -185,18 +139,16 @@ export default function KanbanCard({ prospect, onClick }) {
               href={`mailto:${prospect.email}`}
               onClick={(e) => e.stopPropagation()}
               title="Email"
+              className="p-1 rounded hover:bg-blue-500/20 transition-colors"
             >
-              <Mail size={12} className="text-blue-400 hover:text-blue-300" />
+              <Mail size={13} className="text-blue-400" />
             </a>
           )}
-          {prospect.simulateur_valorisation && (
-            <Calculator size={12} className="text-primary" title="Simulateur de valorisation" />
-          )}
-          {prospect.diaglocal && (
-            <MapPin size={12} className="text-primary" title="DiagLocal" />
-          )}
-          {prospect.guide_recu && (
-            <BookOpen size={12} className="text-primary" title="Guide reçu" />
+          {/* Suivi : dernière interaction */}
+          {isSuivi && prospect.date_derniere_interaction && (
+            <span className="text-[10px] text-text-secondary ml-auto">
+              {new Date(prospect.date_derniere_interaction).toLocaleDateString('fr-FR')}
+            </span>
           )}
         </div>
       )}
