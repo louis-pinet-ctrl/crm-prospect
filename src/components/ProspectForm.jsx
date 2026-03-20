@@ -729,7 +729,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         />
       </div>
 
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-3 pt-2 sticky bottom-0 bg-bg-card pb-2 -mb-2 border-t border-border mt-4 pt-4">
         <button
           type="submit"
           className="flex-1 bg-primary text-bg-main font-semibold py-2.5 rounded-lg hover:bg-primary-hover transition-colors text-sm"
