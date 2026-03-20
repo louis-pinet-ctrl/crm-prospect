@@ -14,6 +14,7 @@ import {
   getDateRelanceSuivi,
 } from '../lib/constants'
 import { fetchCompanyBySiret } from '../lib/pappers'
+import { checkDuplicate } from '../lib/supabase'
 import { parseEmailText } from '../lib/emailParser'
 
 const defaultValues = {
@@ -109,6 +110,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
   const [showPasteZone, setShowPasteZone] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [pasteResult, setPasteResult] = useState(null)
+  const [duplicateWarning, setDuplicateWarning] = useState(null)
 
   // Stocke la note simulateur à créer après soumission
   const [pendingNote, setPendingNote] = useState(null)
@@ -176,6 +178,16 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
       setShowPasteZone(false)
       setPasteText('')
     }, 4000)
+
+    // Vérifier les doublons si c'est un nouveau prospect
+    if (!prospect) {
+      checkDuplicate({
+        email: parsed.email,
+        telephone: parsed.telephone,
+      }).then(dup => {
+        if (dup) setDuplicateWarning(dup)
+      }).catch(() => {})
+    }
   }
 
   const [pappersLoading, setPappersLoading] = useState(false)
@@ -208,7 +220,9 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     }
   }
 
-  const handleSubmit = (e) => {
+  const [submitChecking, setSubmitChecking] = useState(false)
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const data = { ...form }
     if (!data.date_relance) data.date_relance = null
@@ -220,6 +234,23 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     delete data.date_creation
     delete data.date_modification
     delete data.user_id
+
+    // Vérifier doublons si nouveau prospect et pas déjà averti
+    if (!prospect && !duplicateWarning) {
+      setSubmitChecking(true)
+      try {
+        const dup = await checkDuplicate({ email: form.email, telephone: form.telephone })
+        if (dup) {
+          setDuplicateWarning(dup)
+          setSubmitChecking(false)
+          return // Bloquer la soumission, l'utilisateur doit confirmer
+        }
+      } catch {
+        // En cas d'erreur, on laisse passer
+      }
+      setSubmitChecking(false)
+    }
+
     onSubmit(data, pendingNote)
   }
 
@@ -760,12 +791,32 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         />
       </div>
 
+      {/* Alerte doublon */}
+      {duplicateWarning && (
+        <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg">
+          <p className="text-sm text-warning font-medium mb-1">Doublon potentiel !</p>
+          <p className="text-xs text-text-secondary mb-2">
+            Un prospect similaire existe : <strong className="text-text-primary">{duplicateWarning.nom}</strong>
+            {duplicateWarning.email && ` (${duplicateWarning.email})`}
+            {duplicateWarning.telephone && ` — ${duplicateWarning.telephone}`}
+          </p>
+          <button
+            type="button"
+            onClick={() => setDuplicateWarning(null)}
+            className="text-xs text-warning hover:text-warning/80 underline"
+          >
+            Ignorer et créer quand même
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-3 pt-2 sticky bottom-0 bg-bg-card pb-2 -mb-2 border-t border-border mt-4 pt-4">
         <button
           type="submit"
-          className="flex-1 bg-primary text-bg-main font-semibold py-2.5 rounded-lg hover:bg-primary-hover transition-colors text-sm"
+          disabled={submitChecking}
+          className="flex-1 bg-primary text-bg-main font-semibold py-2.5 rounded-lg hover:bg-primary-hover transition-colors text-sm disabled:opacity-50"
         >
-          {prospect ? 'Enregistrer' : 'Créer le prospect'}
+          {submitChecking ? 'Vérification...' : prospect ? 'Enregistrer' : 'Créer le prospect'}
         </button>
         <button
           type="button"

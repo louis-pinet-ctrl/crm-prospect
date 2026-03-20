@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Plus, Search, ArrowUpDown, AlertCircle } from 'lucide-react'
+import RelancesWidget from '../components/RelancesWidget'
 import {
   STATUTS,
   TYPES_DOSSIER,
@@ -88,6 +89,9 @@ export default function ListPage({
 
   return (
     <div className="p-6 space-y-4">
+      {/* Relances widget */}
+      <RelancesWidget prospects={prospects} onSelectProspect={onSelectProspect} />
+
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-lg font-semibold text-text-primary mr-auto">

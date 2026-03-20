@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock } from 'lucide-react'
+import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
+import ProspectSummary from './ProspectSummary'
 import { createNote } from '../lib/supabase'
 import {
   formatCurrency,
@@ -16,6 +17,21 @@ import {
   SUIVI_STATUTS,
   isRelanceOverdue,
 } from '../lib/constants'
+
+function formatWhatsAppUrl(phone) {
+  if (!phone) return null
+  // Nettoyer : garder que les chiffres
+  const digits = phone.replace(/[\s./-]/g, '')
+  // Convertir format FR 06/07 → 336/337
+  if (digits.startsWith('0') && digits.length === 10) {
+    return `https://wa.me/33${digits.slice(1)}`
+  }
+  // Déjà en +33
+  if (digits.startsWith('+33') || digits.startsWith('33')) {
+    return `https://wa.me/${digits.replace('+', '')}`
+  }
+  return `https://wa.me/${digits}`
+}
 
 export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, onAdd, onReload }) {
   const [editing, setEditing] = useState(!prospect)
@@ -114,6 +130,9 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
             />
           ) : (
             <>
+              {/* AI-like summary */}
+              <ProspectSummary prospect={prospect} />
+
               {/* Read-only view */}
               <div className="space-y-4 mb-6">
                 <div className="flex flex-wrap gap-2 mb-4">
@@ -157,7 +176,20 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                   {prospect.telephone && (
                     <div>
                       <span className="text-text-secondary text-xs">Téléphone</span>
-                      <p className="text-text-primary">{prospect.telephone}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-text-primary">{prospect.telephone}</p>
+                        {formatWhatsAppUrl(prospect.telephone) && (
+                          <a
+                            href={formatWhatsAppUrl(prospect.telephone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 rounded hover:bg-green-500/20 transition-colors"
+                            title="Envoyer un WhatsApp"
+                          >
+                            <MessageCircle size={16} className="text-green-400" />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
                   {prospect.email && (

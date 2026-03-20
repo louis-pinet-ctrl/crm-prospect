@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock } from 'lucide-react'
+import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock, MessageCircle } from 'lucide-react'
 import {
   formatCurrency,
   getTypeDossierColor,
@@ -112,8 +112,25 @@ export default function KanbanCard({ prospect, onClick }) {
         </div>
       )}
 
-      {(prospect.simulateur_valorisation || prospect.diaglocal || prospect.guide_recu) && (
-        <div className="flex gap-1.5 mt-2">
+      {(prospect.simulateur_valorisation || prospect.diaglocal || prospect.guide_recu || prospect.telephone) && (
+        <div className="flex items-center gap-1.5 mt-2">
+          {prospect.telephone && (() => {
+            const digits = prospect.telephone.replace(/[\s./-]/g, '')
+            const waNum = digits.startsWith('0') && digits.length === 10
+              ? `33${digits.slice(1)}`
+              : digits.replace('+', '')
+            return (
+              <a
+                href={`https://wa.me/${waNum}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title="WhatsApp"
+              >
+                <MessageCircle size={12} className="text-green-400 hover:text-green-300" />
+              </a>
+            )
+          })()}
           {prospect.simulateur_valorisation && (
             <Calculator size={12} className="text-primary" title="Simulateur de valorisation" />
           )}

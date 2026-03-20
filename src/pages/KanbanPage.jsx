@@ -11,6 +11,8 @@ import {
 import { Plus, Search, Filter, ChevronDown, ChevronRight } from 'lucide-react'
 import KanbanColumn from '../components/KanbanColumn'
 import KanbanCard from '../components/KanbanCard'
+import RelancesWidget from '../components/RelancesWidget'
+import PipelineSummary from '../components/PipelineSummary'
 import { STATUTS, TUNNELS, TYPES_DOSSIER, SOURCES, PRIORITES, SUIVI_STATUTS, getDateRelanceSuivi } from '../lib/constants'
 
 export default function KanbanPage({
@@ -213,6 +215,10 @@ export default function KanbanPage({
           )}
         </div>
       )}
+
+      {/* Relances + Pipeline summary */}
+      <RelancesWidget prospects={prospects} onSelectProspect={onSelectProspect} />
+      <PipelineSummary prospects={prospects} />
 
       {/* Kanban board - 3 tunnels */}
       <div className="flex-1 overflow-y-auto">

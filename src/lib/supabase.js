@@ -51,6 +51,40 @@ export async function deleteProspect(id) {
   if (error) throw error
 }
 
+// --- Doublons ---
+
+export async function checkDuplicate({ email, telephone, excludeId }) {
+  const results = []
+
+  if (email) {
+    const { data } = await supabase
+      .from('prospects')
+      .select('id, nom, email, telephone')
+      .eq('email', email.toLowerCase())
+      .limit(1)
+    if (data?.length && data[0].id !== excludeId) results.push(data[0])
+  }
+
+  if (telephone && results.length === 0) {
+    // Normaliser : garder que les chiffres pour comparer
+    const digits = telephone.replace(/[\s./-]/g, '')
+    const { data } = await supabase
+      .from('prospects')
+      .select('id, nom, email, telephone')
+      .limit(100) // on filtre côté client car Supabase ne supporte pas le replace dans les filtres
+    if (data) {
+      const match = data.find(p =>
+        p.id !== excludeId &&
+        p.telephone &&
+        p.telephone.replace(/[\s./-]/g, '') === digits
+      )
+      if (match) results.push(match)
+    }
+  }
+
+  return results.length > 0 ? results[0] : null
+}
+
 // --- Notes ---
 
 export async function fetchNotes(prospectId) {
