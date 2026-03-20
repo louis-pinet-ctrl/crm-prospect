@@ -198,8 +198,9 @@ export default function App() {
           prospect={null}
           onClose={() => setShowAddModal(false)}
           onAdd={async (data) => {
-            await prospectData.add(data)
+            const created = await prospectData.add(data)
             setShowAddModal(false)
+            return created
           }}
         />
       )}

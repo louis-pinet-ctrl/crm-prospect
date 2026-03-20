@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
+import { createNote } from '../lib/supabase'
 import {
   formatCurrency,
   getTypeDossierLabel,
@@ -22,9 +23,21 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
 
   const isNew = !prospect
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data, pendingNote) => {
     if (isNew) {
-      await onAdd(data)
+      const created = await onAdd(data)
+      // Créer la note simulateur automatiquement après création du prospect
+      if (pendingNote && created?.id) {
+        try {
+          await createNote({
+            prospect_id: created.id,
+            contenu: pendingNote,
+            type_note: 'note_libre',
+          })
+        } catch (err) {
+          console.error('Erreur création note simulateur:', err)
+        }
+      }
     } else {
       await onUpdate(prospect.id, data)
       setEditing(false)

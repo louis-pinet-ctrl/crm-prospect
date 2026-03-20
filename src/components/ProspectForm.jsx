@@ -110,17 +110,22 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
   const [pasteText, setPasteText] = useState('')
   const [pasteResult, setPasteResult] = useState(null)
 
+  // Stocke la note simulateur à créer après soumission
+  const [pendingNote, setPendingNote] = useState(null)
+
   const handleParseEmail = () => {
     if (!pasteText.trim()) return
     const parsed = parseEmailText(pasteText)
-    const fieldsFound = Object.keys(parsed)
+    const fieldsFound = Object.keys(parsed).filter(k => !k.startsWith('_'))
     if (fieldsFound.length === 0) {
       setPasteResult({ success: false, message: 'Aucune info détectée dans ce texte.' })
       return
     }
+    const isSimu = parsed._isSimulateur
+
     setForm(prev => {
       const next = { ...prev }
-      // Ne remplit que les champs vides ou par défaut
+      // Champs communs — ne remplit que les champs vides
       if (parsed.nom && !prev.nom) next.nom = parsed.nom
       if (parsed.email && !prev.email) next.email = parsed.email
       if (parsed.telephone && !prev.telephone) next.telephone = parsed.telephone
@@ -131,20 +136,46 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
       if (parsed.loyer_mensuel != null && !prev.loyer_mensuel) next.loyer_mensuel = parsed.loyer_mensuel
       if (parsed.nombre_salaries != null && prev.nombre_salaries == null) next.nombre_salaries = parsed.nombre_salaries
       if (parsed.adresse && !prev.diaglocal_adresse) next.diaglocal_adresse = parsed.adresse
+
+      // Champs spécifiques simulateur
+      if (isSimu) {
+        next.source = 'simulateur_precession'
+        next.simulateur_valorisation = true
+        next.type_dossier = 'cession_fonds'
+        next.mode_honoraires = 'pourcentage'
+        next.taux_pourcentage = 1.3
+        if (parsed.simulateur_estimation) next.simulateur_estimation = parsed.simulateur_estimation
+        if (parsed.base_calcul) next.base_calcul = parsed.base_calcul
+        if (parsed.ca_annuel_declare != null && prev.ca_annuel_declare == null) next.ca_annuel_declare = parsed.ca_annuel_declare
+        if (parsed.type_cuisine) next.type_cuisine = parsed.type_cuisine
+        if (parsed.source_detail) next.source_detail = parsed.source_detail
+      }
+
       return next
     })
+
+    // Préparer la note avec les détails bail/juridique du simulateur
+    if (isSimu && parsed._note_contenu) {
+      setPendingNote(parsed._note_contenu)
+    }
+
     const labels = {
       nom: 'Nom', email: 'Email', telephone: 'Téléphone', etablissement: 'Établissement',
       ville: 'Ville', siret: 'SIRET', surface_local_m2: 'Surface', loyer_mensuel: 'Loyer',
-      nombre_salaries: 'Salariés', adresse: 'Adresse',
+      nombre_salaries: 'Salariés', adresse: 'Adresse', source: 'Source', type_cuisine: 'Cuisine',
+      ca_annuel_declare: 'CA annuel', simulateur_estimation: 'Valorisation', base_calcul: 'Base honoraires',
+      source_detail: 'Détails simu',
     }
-    const found = fieldsFound.map(f => labels[f] || f).join(', ')
-    setPasteResult({ success: true, message: `Détecté : ${found}` })
+    const found = fieldsFound.map(f => labels[f] || f).filter(Boolean).join(', ')
+    const msg = isSimu
+      ? `Lead simulateur importé ! ${found}`
+      : `Détecté : ${found}`
+    setPasteResult({ success: true, message: msg })
     setTimeout(() => {
       setPasteResult(null)
       setShowPasteZone(false)
       setPasteText('')
-    }, 3000)
+    }, 4000)
   }
 
   const [pappersLoading, setPappersLoading] = useState(false)
@@ -189,7 +220,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     delete data.date_creation
     delete data.date_modification
     delete data.user_id
-    onSubmit(data)
+    onSubmit(data, pendingNote)
   }
 
   const inputClass =
