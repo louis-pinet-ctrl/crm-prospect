@@ -1,22 +1,46 @@
 import { useState, useEffect } from 'react'
-import { Phone, Mail, Calendar, FileText, StickyNote } from 'lucide-react'
-import { fetchNotes, createNote } from '../lib/supabase'
-import { TYPES_NOTE } from '../lib/constants'
+import { Phone, Mail, MessageCircle, Calendar, FileText, StickyNote, CalendarClock } from 'lucide-react'
+import { fetchNotes, createNote, updateProspectAfterInteraction, updateProspect } from '../lib/supabase'
+import { TYPES_NOTE, TYPES_INTERACTION, RESULTATS_INTERACTION } from '../lib/constants'
 
 const ICONS = {
   appel: Phone,
   email: Mail,
+  whatsapp: MessageCircle,
   rdv: Calendar,
   courrier: FileText,
   note_libre: StickyNote,
 }
 
-export default function NotesSection({ prospectId }) {
+const RESULTAT_COLORS = {
+  pas_de_reponse: 'text-text-secondary',
+  message_laisse: 'text-yellow-400',
+  interesse: 'text-green-400',
+  a_rappeler: 'text-orange-400',
+  rdv_pris: 'text-primary',
+  refus: 'text-red-400',
+  info_envoyee: 'text-blue-400',
+}
+
+export default function NotesSection({ prospectId, onProspectUpdate }) {
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [contenu, setContenu] = useState('')
-  const [typeNote, setTypeNote] = useState('note_libre')
+  const [typeNote, setTypeNote] = useState('appel')
+  const [resultat, setResultat] = useState('')
+  const [dateInteraction, setDateInteraction] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const isInteraction = TYPES_INTERACTION.includes(typeNote)
+
+  // Initialiser la date au moment présent quand on change de type
+  useEffect(() => {
+    if (isInteraction && !dateInteraction) {
+      const now = new Date()
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+      setDateInteraction(now.toISOString().slice(0, 16))
+    }
+  }, [isInteraction, dateInteraction])
 
   useEffect(() => {
     if (!prospectId) return
@@ -32,18 +56,50 @@ export default function NotesSection({ prospectId }) {
     if (!contenu.trim()) return
     setSubmitting(true)
     try {
-      const note = await createNote({
+      const noteData = {
         prospect_id: prospectId,
         contenu: contenu.trim(),
         type_note: typeNote,
-      })
+      }
+
+      if (isInteraction) {
+        noteData.date_interaction = dateInteraction
+          ? new Date(dateInteraction).toISOString()
+          : new Date().toISOString()
+        if (resultat) noteData.resultat = resultat
+      }
+
+      const note = await createNote(noteData)
       setNotes(prev => [note, ...prev])
+
+      // Auto-update prospect (date_derniere_interaction + compteur relances)
+      if (isInteraction) {
+        try {
+          await updateProspectAfterInteraction(prospectId, typeNote, noteData.date_interaction)
+          if (onProspectUpdate) onProspectUpdate()
+        } catch (err) {
+          console.error('Erreur mise à jour prospect:', err)
+        }
+      }
+
+      // Reset form
       setContenu('')
-      setTypeNote('note_libre')
+      setTypeNote('appel')
+      setResultat('')
+      setDateInteraction('')
     } catch (err) {
       console.error(err)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleSetRelance = async (dateStr) => {
+    try {
+      await updateProspect(prospectId, { date_relance: dateStr })
+      if (onProspectUpdate) onProspectUpdate()
+    } catch (err) {
+      console.error('Erreur mise à jour relance:', err)
     }
   }
 
@@ -56,15 +112,29 @@ export default function NotesSection({ prospectId }) {
       minute: '2-digit',
     })
 
+  const getResultatLabel = (val) =>
+    RESULTATS_INTERACTION.find(r => r.value === val)?.label || val
+
   return (
     <div>
       <h4 className="text-sm font-medium text-text-primary mb-3">Historique</h4>
 
       <form onSubmit={handleAdd} className="mb-4 space-y-2">
+        {/* Ligne 1 : type + bouton */}
         <div className="flex gap-2">
           <select
             value={typeNote}
-            onChange={(e) => setTypeNote(e.target.value)}
+            onChange={(e) => {
+              setTypeNote(e.target.value)
+              if (!TYPES_INTERACTION.includes(e.target.value)) {
+                setResultat('')
+                setDateInteraction('')
+              } else if (!dateInteraction) {
+                const now = new Date()
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+                setDateInteraction(now.toISOString().slice(0, 16))
+              }
+            }}
             className="bg-bg-main border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
           >
             {TYPES_NOTE.map(t => (
@@ -79,10 +149,33 @@ export default function NotesSection({ prospectId }) {
             Ajouter
           </button>
         </div>
+
+        {/* Ligne 2 : date + résultat (interactions uniquement) */}
+        {isInteraction && (
+          <div className="flex gap-2">
+            <input
+              type="datetime-local"
+              value={dateInteraction}
+              onChange={(e) => setDateInteraction(e.target.value)}
+              className="bg-bg-main border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary flex-1"
+            />
+            <select
+              value={resultat}
+              onChange={(e) => setResultat(e.target.value)}
+              className="bg-bg-main border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary flex-1"
+            >
+              {RESULTATS_INTERACTION.map(r => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Textarea */}
         <textarea
           value={contenu}
           onChange={(e) => setContenu(e.target.value)}
-          placeholder="Ajouter une note..."
+          placeholder={isInteraction ? 'Notes sur l\'échange...' : 'Ajouter une note...'}
           rows={2}
           className="w-full bg-bg-main border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary resize-none"
         />
@@ -97,27 +190,93 @@ export default function NotesSection({ prospectId }) {
           {notes.map(note => {
             const Icon = ICONS[note.type_note] || StickyNote
             const typeLabel = TYPES_NOTE.find(t => t.value === note.type_note)?.label || ''
+            const displayDate = note.date_interaction || note.date_creation
+            const resultatColor = RESULTAT_COLORS[note.resultat] || 'text-text-secondary'
+
             return (
               <div key={note.id} className="flex gap-3 text-sm">
                 <div className="mt-0.5 shrink-0">
                   <Icon size={16} className="text-text-secondary" />
                 </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-text-secondary text-xs">{typeLabel}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <span className="text-text-secondary text-xs font-medium">{typeLabel}</span>
                     <span className="text-text-secondary text-xs">
-                      {formatDate(note.date_creation)}
+                      {formatDate(displayDate)}
                     </span>
+                    {note.resultat && (
+                      <span className={`text-xs font-medium ${resultatColor}`}>
+                        {getResultatLabel(note.resultat)}
+                      </span>
+                    )}
                   </div>
                   <p className="text-text-primary whitespace-pre-wrap break-words">
                     {note.contenu}
                   </p>
+                  {/* Bouton rapide "Planifier relance" si résultat = à rappeler */}
+                  {note.resultat === 'a_rappeler' && (
+                    <RelanceQuickAction onSetRelance={handleSetRelance} />
+                  )}
                 </div>
               </div>
             )
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+// Petit composant pour planifier une relance rapidement
+function RelanceQuickAction({ onSetRelance }) {
+  const [show, setShow] = useState(false)
+  const [dateRelance, setDateRelance] = useState('')
+
+  if (!show) {
+    return (
+      <button
+        onClick={() => {
+          // Pré-remplir à demain 10h
+          const d = new Date()
+          d.setDate(d.getDate() + 1)
+          d.setHours(10, 0, 0, 0)
+          d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+          setDateRelance(d.toISOString().slice(0, 16))
+          setShow(true)
+        }}
+        className="mt-1 flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 transition-colors"
+      >
+        <CalendarClock size={12} />
+        Planifier relance
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-1 flex items-center gap-2">
+      <input
+        type="datetime-local"
+        value={dateRelance}
+        onChange={(e) => setDateRelance(e.target.value)}
+        className="bg-bg-main border border-border rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-primary"
+      />
+      <button
+        onClick={() => {
+          if (dateRelance) {
+            onSetRelance(new Date(dateRelance).toISOString())
+            setShow(false)
+          }
+        }}
+        className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded hover:bg-orange-500/30 transition-colors"
+      >
+        OK
+      </button>
+      <button
+        onClick={() => setShow(false)}
+        className="text-xs text-text-secondary hover:text-text-primary transition-colors"
+      >
+        Annuler
+      </button>
     </div>
   )
 }

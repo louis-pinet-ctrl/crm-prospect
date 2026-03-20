@@ -17,7 +17,7 @@ import {
   isRelanceOverdue,
 } from '../lib/constants'
 
-export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, onAdd }) {
+export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, onAdd, onReload }) {
   const [editing, setEditing] = useState(!prospect)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -364,7 +364,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
 
               {/* Notes section */}
               <div className="border-t border-border pt-4">
-                <NotesSection prospectId={prospect.id} />
+                <NotesSection prospectId={prospect.id} onProspectUpdate={onReload} />
               </div>
             </>
           )}

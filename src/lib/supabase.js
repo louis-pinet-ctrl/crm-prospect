@@ -73,6 +73,32 @@ export async function createNote(note) {
   return data
 }
 
+// Met à jour le prospect après ajout d'une interaction
+// - date_derniere_interaction = date de l'interaction
+// - nombre_relances_effectuees += 1 si c'est un appel/email/whatsapp
+export async function updateProspectAfterInteraction(prospectId, typeNote, dateInteraction) {
+  const TYPES_RELANCE = ['appel', 'email', 'whatsapp']
+  const updates = {
+    date_derniere_interaction: dateInteraction || new Date().toISOString(),
+  }
+
+  if (TYPES_RELANCE.includes(typeNote)) {
+    // Récupérer le compteur actuel
+    const { data: prospect } = await supabase
+      .from('prospects')
+      .select('nombre_relances_effectuees')
+      .eq('id', prospectId)
+      .single()
+    updates.nombre_relances_effectuees = (prospect?.nombre_relances_effectuees || 0) + 1
+  }
+
+  const { error } = await supabase
+    .from('prospects')
+    .update(updates)
+    .eq('id', prospectId)
+  if (error) throw error
+}
+
 // --- Commentaires ---
 
 export async function fetchCommentaires() {

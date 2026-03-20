@@ -189,6 +189,7 @@ export default function App() {
             await prospectData.remove(id)
             setSelectedProspect(null)
           }}
+          onReload={() => prospectData.reload()}
         />
       )}
 

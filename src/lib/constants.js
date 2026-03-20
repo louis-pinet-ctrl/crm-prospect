@@ -80,9 +80,27 @@ export const PRIORITES = [
 export const TYPES_NOTE = [
   { value: 'appel', label: 'Appel', icon: 'Phone' },
   { value: 'email', label: 'Email', icon: 'Mail' },
+  { value: 'whatsapp', label: 'WhatsApp', icon: 'MessageCircle' },
   { value: 'rdv', label: 'RDV', icon: 'Calendar' },
   { value: 'courrier', label: 'Courrier', icon: 'FileText' },
   { value: 'note_libre', label: 'Note libre', icon: 'StickyNote' },
+]
+
+// Types qui correspondent à une interaction (vs note libre)
+export const TYPES_INTERACTION = ['appel', 'email', 'whatsapp', 'rdv']
+
+// Types qui comptent comme une relance
+export const TYPES_RELANCE = ['appel', 'email', 'whatsapp']
+
+export const RESULTATS_INTERACTION = [
+  { value: '', label: '— Résultat —' },
+  { value: 'pas_de_reponse', label: 'Pas de réponse' },
+  { value: 'message_laisse', label: 'Message laissé' },
+  { value: 'interesse', label: 'Intéressé' },
+  { value: 'a_rappeler', label: 'À rappeler' },
+  { value: 'rdv_pris', label: 'RDV pris' },
+  { value: 'refus', label: 'Refus' },
+  { value: 'info_envoyee', label: 'Info envoyée' },
 ]
 
 export const MODES_HONORAIRES = [
