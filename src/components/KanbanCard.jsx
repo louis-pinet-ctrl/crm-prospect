@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock, MessageCircle } from 'lucide-react'
+import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock, MessageCircle, Mail } from 'lucide-react'
 import { ScoreBadge } from './ScoreBadge'
 import { calculateScore } from '../lib/scoring'
 import {
@@ -140,7 +140,7 @@ export default function KanbanCard({ prospect, onClick }) {
         </div>
       )}
 
-      {(prospect.simulateur_valorisation || prospect.diaglocal || prospect.guide_recu || prospect.telephone) && (
+      {(prospect.simulateur_valorisation || prospect.diaglocal || prospect.guide_recu || prospect.telephone || prospect.email) && (
         <div className="flex items-center gap-1.5 mt-2">
           {prospect.telephone && (() => {
             const digits = prospect.telephone.replace(/[\s./-]/g, '')
@@ -159,6 +159,15 @@ export default function KanbanCard({ prospect, onClick }) {
               </a>
             )
           })()}
+          {prospect.email && (
+            <a
+              href={`mailto:${prospect.email}`}
+              onClick={(e) => e.stopPropagation()}
+              title="Email"
+            >
+              <Mail size={12} className="text-blue-400 hover:text-blue-300" />
+            </a>
+          )}
           {prospect.simulateur_valorisation && (
             <Calculator size={12} className="text-primary" title="Simulateur de valorisation" />
           )}

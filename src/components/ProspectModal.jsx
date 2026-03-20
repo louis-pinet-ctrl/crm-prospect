@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle } from 'lucide-react'
+import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Phone } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import ProspectSummary from './ProspectSummary'
 import { ScoreBreakdown } from './ScoreBadge'
-import { createNote, fetchNotes } from '../lib/supabase'
+import { createNote, fetchNotes, updateProspectAfterInteraction } from '../lib/supabase'
 import { calculateScore } from '../lib/scoring'
 import {
   formatCurrency,
@@ -50,6 +50,34 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
   }, [prospect])
 
   const isNew = !prospect
+
+  // Action rapide : crée une note d'interaction + ouvre le lien
+  const handleQuickAction = async (type, url, openInNewTab = false) => {
+    if (!prospect?.id) return
+
+    const labels = { appel: 'Appel sortant', email: 'Email envoyé', whatsapp: 'Message WhatsApp envoyé' }
+    try {
+      await createNote({
+        prospect_id: prospect.id,
+        contenu: labels[type] || type,
+        type_note: type,
+        date_interaction: new Date().toISOString(),
+      })
+      await updateProspectAfterInteraction(prospect.id, type, new Date().toISOString())
+      if (onReload) onReload()
+    } catch (err) {
+      console.error('Erreur création interaction rapide:', err)
+    }
+
+    // Ouvrir le lien
+    if (url) {
+      if (openInNewTab) {
+        window.open(url, '_blank', 'noopener,noreferrer')
+      } else {
+        window.location.href = url
+      }
+    }
+  }
 
   const handleSubmit = async (data, pendingNote) => {
     if (isNew) {
@@ -204,16 +232,21 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                       <span className="text-text-secondary text-xs">Téléphone</span>
                       <div className="flex items-center gap-2">
                         <p className="text-text-primary">{prospect.telephone}</p>
+                        <button
+                          onClick={() => handleQuickAction('appel', `tel:${prospect.telephone}`)}
+                          className="p-1 rounded hover:bg-primary/20 transition-colors"
+                          title="Appeler (+ note auto)"
+                        >
+                          <Phone size={14} className="text-primary" />
+                        </button>
                         {formatWhatsAppUrl(prospect.telephone) && (
-                          <a
-                            href={formatWhatsAppUrl(prospect.telephone)}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => handleQuickAction('whatsapp', formatWhatsAppUrl(prospect.telephone), true)}
                             className="p-1 rounded hover:bg-green-500/20 transition-colors"
-                            title="Envoyer un WhatsApp"
+                            title="WhatsApp (+ note auto)"
                           >
-                            <MessageCircle size={16} className="text-green-400" />
-                          </a>
+                            <MessageCircle size={14} className="text-green-400" />
+                          </button>
                         )}
                       </div>
                     </div>
@@ -221,7 +254,19 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                   {prospect.email && (
                     <div>
                       <span className="text-text-secondary text-xs">Email</span>
-                      <p className="text-text-primary">{prospect.email}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-text-primary truncate">{prospect.email}</p>
+                        <button
+                          onClick={() => handleQuickAction(
+                            'email',
+                            `mailto:${prospect.email}?subject=${encodeURIComponent(`${prospect.nom} — Votre projet de ${getTypeDossierLabel(prospect.type_dossier).toLowerCase()}`)}`
+                          )}
+                          className="p-1 rounded hover:bg-blue-500/20 transition-colors shrink-0"
+                          title="Email (+ note auto)"
+                        >
+                          <Mail size={14} className="text-blue-400" />
+                        </button>
+                      </div>
                     </div>
                   )}
                   <div>
