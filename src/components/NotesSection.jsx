@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Phone, Mail, MessageCircle, Calendar, FileText, StickyNote, CalendarClock } from 'lucide-react'
-import { fetchNotes, createNote, updateProspectAfterInteraction, updateProspect } from '../lib/supabase'
+import { Phone, Mail, MessageCircle, Calendar, FileText, StickyNote, CalendarClock, Pencil, Trash2, Check, X } from 'lucide-react'
+import { fetchNotes, createNote, updateNote, deleteNote, updateProspectAfterInteraction, updateProspect } from '../lib/supabase'
 import { TYPES_NOTE, TYPES_INTERACTION, RESULTATS_INTERACTION } from '../lib/constants'
 
 const ICONS = {
@@ -91,6 +91,24 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
       console.error(err)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleUpdateNote = async (noteId, newContenu) => {
+    try {
+      const updated = await updateNote(noteId, { contenu: newContenu })
+      setNotes(prev => prev.map(n => n.id === noteId ? updated : n))
+    } catch (err) {
+      console.error('Erreur mise à jour note:', err)
+    }
+  }
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await deleteNote(noteId)
+      setNotes(prev => prev.filter(n => n.id !== noteId))
+    } catch (err) {
+      console.error('Erreur suppression note:', err)
     }
   }
 
@@ -187,42 +205,130 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
         <p className="text-text-secondary text-sm">Aucune note pour le moment.</p>
       ) : (
         <div className="space-y-3 max-h-80 overflow-y-auto">
-          {notes.map(note => {
-            const Icon = ICONS[note.type_note] || StickyNote
-            const typeLabel = TYPES_NOTE.find(t => t.value === note.type_note)?.label || ''
-            const displayDate = note.date_interaction || note.date_creation
-            const resultatColor = RESULTAT_COLORS[note.resultat] || 'text-text-secondary'
-
-            return (
-              <div key={note.id} className="flex gap-3 text-sm">
-                <div className="mt-0.5 shrink-0">
-                  <Icon size={16} className="text-text-secondary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="text-text-secondary text-xs font-medium">{typeLabel}</span>
-                    <span className="text-text-secondary text-xs">
-                      {formatDate(displayDate)}
-                    </span>
-                    {note.resultat && (
-                      <span className={`text-xs font-medium ${resultatColor}`}>
-                        {getResultatLabel(note.resultat)}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-text-primary whitespace-pre-wrap break-words">
-                    {note.contenu}
-                  </p>
-                  {/* Bouton rapide "Planifier relance" si résultat = à rappeler */}
-                  {note.resultat === 'a_rappeler' && (
-                    <RelanceQuickAction onSetRelance={handleSetRelance} />
-                  )}
-                </div>
-              </div>
-            )
-          })}
+          {notes.map(note => (
+            <NoteItem
+              key={note.id}
+              note={note}
+              onUpdate={handleUpdateNote}
+              onDelete={handleDeleteNote}
+              onSetRelance={handleSetRelance}
+              formatDate={formatDate}
+              getResultatLabel={getResultatLabel}
+            />
+          ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// --- Note individuelle avec edit/delete ---
+function NoteItem({ note, onUpdate, onDelete, onSetRelance, formatDate, getResultatLabel }) {
+  const [editing, setEditing] = useState(false)
+  const [editText, setEditText] = useState(note.contenu)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const Icon = ICONS[note.type_note] || StickyNote
+  const typeLabel = TYPES_NOTE.find(t => t.value === note.type_note)?.label || ''
+  const displayDate = note.date_interaction || note.date_creation
+  const resultatColor = RESULTAT_COLORS[note.resultat] || 'text-text-secondary'
+
+  const handleSave = () => {
+    if (editText.trim() && editText !== note.contenu) {
+      onUpdate(note.id, editText.trim())
+    }
+    setEditing(false)
+  }
+
+  return (
+    <div className="flex gap-3 text-sm group">
+      <div className="mt-0.5 shrink-0">
+        <Icon size={16} className="text-text-secondary" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+          <span className="text-text-secondary text-xs font-medium">{typeLabel}</span>
+          <span className="text-text-secondary text-xs">
+            {formatDate(displayDate)}
+          </span>
+          {note.resultat && (
+            <span className={`text-xs font-medium ${resultatColor}`}>
+              {getResultatLabel(note.resultat)}
+            </span>
+          )}
+          {/* Actions edit/delete — visible au hover */}
+          <span className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => { setEditing(true); setEditText(note.contenu) }}
+              className="p-0.5 rounded hover:bg-bg-hover transition-colors"
+              title="Modifier"
+            >
+              <Pencil size={11} className="text-text-secondary hover:text-primary" />
+            </button>
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="p-0.5 rounded hover:bg-bg-hover transition-colors"
+                title="Supprimer"
+              >
+                <Trash2 size={11} className="text-text-secondary hover:text-danger" />
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => { onDelete(note.id); setConfirmDelete(false) }}
+                  className="p-0.5 rounded hover:bg-danger/20 transition-colors"
+                  title="Confirmer"
+                >
+                  <Check size={11} className="text-danger" />
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="p-0.5 rounded hover:bg-bg-hover transition-colors"
+                  title="Annuler"
+                >
+                  <X size={11} className="text-text-secondary" />
+                </button>
+              </>
+            )}
+          </span>
+        </div>
+
+        {editing ? (
+          <div className="space-y-1">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              rows={2}
+              className="w-full bg-bg-main border border-border rounded px-2 py-1 text-sm text-text-primary focus:outline-none focus:border-primary resize-none"
+              autoFocus
+            />
+            <div className="flex gap-1">
+              <button
+                onClick={handleSave}
+                className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded hover:bg-primary/30 transition-colors"
+              >
+                Enregistrer
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="text-xs text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-text-primary whitespace-pre-wrap break-words">
+            {note.contenu}
+          </p>
+        )}
+
+        {/* Bouton rapide "Planifier relance" si résultat = à rappeler */}
+        {note.resultat === 'a_rappeler' && (
+          <RelanceQuickAction onSetRelance={onSetRelance} />
+        )}
+      </div>
     </div>
   )
 }

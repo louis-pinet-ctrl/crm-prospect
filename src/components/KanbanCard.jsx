@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Store } from 'lucide-react'
+import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Store, FolderOpen } from 'lucide-react'
 import { ScoreBadge } from './ScoreBadge'
 import { calculateScore } from '../lib/scoring'
 import {
@@ -99,6 +99,14 @@ export default function KanbanCard({ prospect, onClick }) {
           </span>
         )}
       </div>
+      {/* Client récurrent */}
+      {prospect.client_parent_id && (
+        <div className="flex items-center gap-1 mt-1">
+          <FolderOpen size={10} className="text-purple-400" />
+          <span className="text-[10px] font-medium text-purple-400">Client récurrent</span>
+        </div>
+      )}
+
       {/* Profil resto */}
       {(prospect.type_cuisine || prospect.est_franchise) && (
         <div className="flex items-center gap-1.5 mt-1 flex-wrap">

@@ -3,6 +3,7 @@ import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefH
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import ProspectSummary from './ProspectSummary'
+import DossiersLies from './DossiersLies'
 import { ScoreBreakdown } from './ScoreBadge'
 import { createNote, fetchNotes, updateProspectAfterInteraction } from '../lib/supabase'
 import { calculateScore } from '../lib/scoring'
@@ -36,7 +37,7 @@ function formatWhatsAppUrl(phone) {
   return `https://wa.me/${digits}`
 }
 
-export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, onAdd, onReload }) {
+export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, onAdd, onReload, onSelectProspect }) {
   const [editing, setEditing] = useState(!prospect)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [scoreResult, setScoreResult] = useState(null)
@@ -473,6 +474,13 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                   </div>
                 )}
               </div>
+
+              {/* Dossiers liés */}
+              <DossiersLies
+                prospect={prospect}
+                onSelectProspect={onSelectProspect}
+                onReload={onReload}
+              />
 
               {/* Notes section */}
               <div className="border-t border-border pt-4">

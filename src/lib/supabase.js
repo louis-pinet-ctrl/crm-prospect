@@ -51,6 +51,80 @@ export async function deleteProspect(id) {
   if (error) throw error
 }
 
+// --- Clone / Dossiers liés ---
+
+export async function cloneProspectAsDossier(parentProspect, newTypeDossier) {
+  // Copier les infos client, vider les infos dossier
+  const clone = {
+    nom: parentProspect.nom,
+    telephone: parentProspect.telephone,
+    email: parentProspect.email,
+    etablissement: parentProspect.etablissement,
+    ville: parentProspect.ville,
+    siret: parentProspect.siret,
+    profil_restaurateur: parentProspect.profil_restaurateur,
+    nombre_restaurants: parentProspect.nombre_restaurants,
+    type_cuisine: parentProspect.type_cuisine,
+    nombre_salaries: parentProspect.nombre_salaries,
+    ca_annuel_declare: parentProspect.ca_annuel_declare,
+    a_expert_comptable: parentProspect.a_expert_comptable,
+    nom_expert_comptable: parentProspect.nom_expert_comptable,
+    surface_local_m2: parentProspect.surface_local_m2,
+    loyer_mensuel: parentProspect.loyer_mensuel,
+    est_franchise: parentProspect.est_franchise,
+    enseigne_franchise: parentProspect.enseigne_franchise,
+    nombre_franchises: parentProspect.nombre_franchises,
+    intention: parentProspect.intention,
+    // Nouveau dossier
+    type_dossier: newTypeDossier || 'cession_fonds',
+    statut: 'prospect_identifie',
+    priorite: 'moyenne',
+    source: parentProspect.source,
+    // Lien vers le client parent (ou le parent du parent si c'est déjà un clone)
+    client_parent_id: parentProspect.client_parent_id || parentProspect.id,
+    // Reset des champs dossier
+    base_calcul: 0,
+    montant_forfait: 0,
+    taux_pourcentage: 1.3,
+    mode_honoraires: 'pourcentage',
+    simulateur_valorisation: false,
+    simulateur_estimation: null,
+    diaglocal: false,
+    guide_recu: false,
+    nombre_relances_effectuees: 0,
+    date_derniere_interaction: null,
+    date_relance: null,
+  }
+
+  const { data, error } = await supabase
+    .from('prospects')
+    .insert(clone)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function fetchDossiersLies(prospectId) {
+  // Trouver le "root" client id
+  const { data: self } = await supabase
+    .from('prospects')
+    .select('id, client_parent_id')
+    .eq('id', prospectId)
+    .single()
+
+  const rootId = self?.client_parent_id || prospectId
+
+  // Récupérer tous les dossiers liés (parent + enfants)
+  const { data, error } = await supabase
+    .from('prospects')
+    .select('id, nom, type_dossier, statut, ca_estime, date_creation, client_parent_id')
+    .or(`id.eq.${rootId},client_parent_id.eq.${rootId}`)
+    .order('date_creation', { ascending: true })
+  if (error) throw error
+  return data.filter(d => d.id !== prospectId) // exclure soi-même
+}
+
 // --- Doublons ---
 
 export async function checkDuplicate({ email, telephone, excludeId }) {
@@ -105,6 +179,22 @@ export async function createNote(note) {
     .single()
   if (error) throw error
   return data
+}
+
+export async function updateNote(id, updates) {
+  const { data, error } = await supabase
+    .from('notes')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteNote(id) {
+  const { error } = await supabase.from('notes').delete().eq('id', id)
+  if (error) throw error
 }
 
 // Met à jour le prospect après ajout d'une interaction

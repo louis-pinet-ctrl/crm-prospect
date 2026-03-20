@@ -29,6 +29,7 @@ export default function KanbanPage({
   const [showFilters, setShowFilters] = useState(false)
   const [activeId, setActiveId] = useState(null)
   const [collapsedTunnels, setCollapsedTunnels] = useState({})
+  const [filterClientExistant, setFilterClientExistant] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -60,9 +61,10 @@ export default function KanbanPage({
       if (filterType && p.type_dossier !== filterType) return false
       if (filterSource && p.source !== filterSource) return false
       if (filterPriorite && p.priorite !== filterPriorite) return false
+      if (filterClientExistant && !p.client_parent_id) return false
       return true
     })
-  }, [prospects, search, filterType, filterSource, filterPriorite])
+  }, [prospects, search, filterType, filterSource, filterPriorite, filterClientExistant])
 
   const columnMap = useMemo(() => {
     const map = {}
@@ -155,7 +157,7 @@ export default function KanbanPage({
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`p-2 rounded-lg border transition-colors ${
-            showFilters || filterType || filterSource || filterPriorite
+            showFilters || filterType || filterSource || filterPriorite || filterClientExistant
               ? 'border-primary text-primary'
               : 'border-border text-text-secondary hover:text-text-primary'
           }`}
@@ -205,9 +207,18 @@ export default function KanbanPage({
               <option key={p.value} value={p.value}>{p.label}</option>
             ))}
           </select>
-          {(filterType || filterSource || filterPriorite) && (
+          <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filterClientExistant}
+              onChange={(e) => setFilterClientExistant(e.target.checked)}
+              className="accent-primary w-4 h-4"
+            />
+            Clients existants
+          </label>
+          {(filterType || filterSource || filterPriorite || filterClientExistant) && (
             <button
-              onClick={() => { setFilterType(''); setFilterSource(''); setFilterPriorite('') }}
+              onClick={() => { setFilterType(''); setFilterSource(''); setFilterPriorite(''); setFilterClientExistant(false) }}
               className="text-sm text-danger hover:underline"
             >
               Réinitialiser
