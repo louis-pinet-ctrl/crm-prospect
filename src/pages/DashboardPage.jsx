@@ -79,7 +79,7 @@ export default function DashboardPage({ prospects }) {
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
 
     const actifs = filteredProspects.filter(
-      p => !['cloture', 'perdu_refuse'].includes(p.statut)
+      p => !['cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)
     ).length
 
     return { facture, enCours, previsionnel, actifs }
@@ -149,7 +149,7 @@ export default function DashboardPage({ prospects }) {
     }
 
     const activeProspects = filteredProspects.filter(
-      p => !['cloture', 'perdu_refuse', 'facture'].includes(p.statut)
+      p => !['cloture', 'perdu_refuse', 'facture', 'prescripteur', 'suivi_long_terme'].includes(p.statut)
     )
 
     activeProspects.forEach(p => {
@@ -206,7 +206,7 @@ export default function DashboardPage({ prospects }) {
         months[idx].facture += ca
       } else if (p.statut === 'mission_en_cours') {
         months[idx].enCours += ca
-      } else if (p.statut !== 'perdu_refuse') {
+      } else if (!['perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)) {
         months[idx].previsionnel += ca
       }
     })

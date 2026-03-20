@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase } from 'lucide-react'
+import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import {
   formatCurrency,
   getTypeDossierLabel,
   getTypeDossierColor,
+  getTypePrescripteurLabel,
   STATUTS,
   SOURCES,
   PRIORITES,
   PROFILS_RESTAURATEUR,
   TYPES_CUISINE,
+  SUIVI_STATUTS,
   isRelanceOverdue,
 } from '../lib/constants'
 
@@ -287,6 +289,48 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                     {prospect.diaglocal_notes && (
                       <p className="text-text-secondary whitespace-pre-wrap">{prospect.diaglocal_notes}</p>
                     )}
+                  </div>
+                )}
+
+                {/* Prescripteur & Suivi */}
+                {SUIVI_STATUTS.includes(prospect.statut) && (
+                  <div className="border-t border-border pt-3">
+                    <h4 className="text-xs font-medium text-text-secondary mb-2 flex items-center gap-1.5">
+                      <UserCheck size={13} />
+                      Prescripteur & Suivi
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {prospect.statut === 'prescripteur' && prospect.type_prescripteur && (
+                        <div>
+                          <span className="text-text-secondary text-xs">Type prescripteur</span>
+                          <p className="text-text-primary">{getTypePrescripteurLabel(prospect.type_prescripteur)}</p>
+                        </div>
+                      )}
+                      {prospect.statut === 'prescripteur' && prospect.nombre_deals_apportes > 0 && (
+                        <div>
+                          <span className="text-text-secondary text-xs">Deals apportés</span>
+                          <p className="text-text-primary font-medium">{prospect.nombre_deals_apportes}</p>
+                        </div>
+                      )}
+                      {prospect.nombre_relances_effectuees > 0 && (
+                        <div>
+                          <span className="text-text-secondary text-xs">Relances effectuées</span>
+                          <p className="text-text-primary flex items-center gap-1.5">
+                            <RefreshCw size={13} className="text-text-secondary" />
+                            {prospect.nombre_relances_effectuees}
+                          </p>
+                        </div>
+                      )}
+                      {prospect.date_derniere_interaction && (
+                        <div>
+                          <span className="text-text-secondary text-xs">Dernière interaction</span>
+                          <p className="text-text-primary flex items-center gap-1.5">
+                            <Clock size={13} className="text-text-secondary" />
+                            {new Date(prospect.date_derniere_interaction).toLocaleDateString('fr-FR')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

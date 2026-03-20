@@ -64,8 +64,7 @@ export default function App() {
   }
 
   const relancesCount = prospectData.prospects.filter(p =>
-    isRelanceOverdue(p.date_relance) &&
-    !['cloture', 'perdu_refuse'].includes(p.statut)
+    isRelanceOverdue(p.date_relance)
   ).length
 
   const navItems = [

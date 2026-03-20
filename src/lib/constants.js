@@ -8,6 +8,8 @@ export const STATUTS = [
   { value: 'facture', label: 'Facturé', order: 7 },
   { value: 'cloture', label: 'Clôturé', order: 8 },
   { value: 'perdu_refuse', label: 'Perdu / Refusé', order: 9 },
+  { value: 'prescripteur', label: 'Prescripteur', order: 10 },
+  { value: 'suivi_long_terme', label: 'Suivi long terme', order: 11 },
 ]
 
 export const TUNNELS = [
@@ -28,11 +30,25 @@ export const TUNNELS = [
   {
     id: 'suivi',
     label: 'Suivi & Prescripteurs',
-    description: 'Suivi long terme, prescripteurs à relancer',
+    description: 'Suivi long terme, prescripteurs à relancer trimestriellement',
     color: '#f59e0b',
-    statuts: ['cloture', 'perdu_refuse'],
+    statuts: ['cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'],
   },
 ]
+
+export const TYPES_PRESCRIPTEUR = [
+  { value: 'expert_comptable', label: 'Expert-comptable' },
+  { value: 'notaire', label: 'Notaire' },
+  { value: 'agent_immobilier', label: 'Agent immobilier' },
+  { value: 'avocat', label: 'Avocat' },
+  { value: 'banquier', label: 'Banquier' },
+  { value: 'courtier', label: 'Courtier' },
+  { value: 'autre', label: 'Autre' },
+]
+
+export const SUIVI_STATUTS = ['cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme']
+
+export const DELAI_RELANCE_SUIVI_JOURS = 90
 
 export const TYPES_DOSSIER = [
   { value: 'cession_fonds', label: 'Cession de fonds de commerce', color: '#8b5cf6' },
@@ -105,6 +121,18 @@ export const STAGE_PROBABILITY = {
   facture: 1.0,
   cloture: 1.0,
   perdu_refuse: 0,
+  prescripteur: 0,
+  suivi_long_terme: 0.10,
+}
+
+export function getDateRelanceSuivi() {
+  const date = new Date()
+  date.setDate(date.getDate() + DELAI_RELANCE_SUIVI_JOURS)
+  return date.toISOString().split('T')[0]
+}
+
+export function getTypePrescripteurLabel(type) {
+  return TYPES_PRESCRIPTEUR.find(t => t.value === type)?.label || type || ''
 }
 
 export const CA_OBJECTIF = 300000

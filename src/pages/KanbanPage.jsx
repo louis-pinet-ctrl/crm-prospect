@@ -10,7 +10,7 @@ import {
 import { Plus, Search, Filter, ChevronDown, ChevronRight } from 'lucide-react'
 import KanbanColumn from '../components/KanbanColumn'
 import KanbanCard from '../components/KanbanCard'
-import { STATUTS, TUNNELS, TYPES_DOSSIER, SOURCES, PRIORITES } from '../lib/constants'
+import { STATUTS, TUNNELS, TYPES_DOSSIER, SOURCES, PRIORITES, SUIVI_STATUTS, getDateRelanceSuivi } from '../lib/constants'
 
 export default function KanbanPage({
   prospects,
@@ -86,7 +86,16 @@ export default function KanbanPage({
     if (prospect.statut === targetStatut) return
 
     try {
-      await update(prospectId, { statut: targetStatut })
+      const updates = { statut: targetStatut }
+
+      // Auto-set relance à +90j quand on entre dans le tunnel Suivi & Prescripteurs
+      const wasInSuivi = SUIVI_STATUTS.includes(prospect.statut)
+      const nowInSuivi = SUIVI_STATUTS.includes(targetStatut)
+      if (!wasInSuivi && nowInSuivi) {
+        updates.date_relance = getDateRelanceSuivi()
+      }
+
+      await update(prospectId, updates)
     } catch (err) {
       console.error('Erreur lors du déplacement:', err)
     }

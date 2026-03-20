@@ -1,11 +1,13 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, Calculator, MapPin, BookOpen } from 'lucide-react'
+import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock } from 'lucide-react'
 import {
   formatCurrency,
   getTypeDossierColor,
   getTypeDossierLabel,
+  getTypePrescripteurLabel,
   isRelanceOverdue,
+  SUIVI_STATUTS,
 } from '../lib/constants'
 
 export default function KanbanCard({ prospect, onClick }) {
@@ -25,6 +27,7 @@ export default function KanbanCard({ prospect, onClick }) {
   }
 
   const overdue = isRelanceOverdue(prospect.date_relance)
+  const isSuivi = SUIVI_STATUTS.includes(prospect.statut)
 
   return (
     <div
@@ -40,7 +43,12 @@ export default function KanbanCard({ prospect, onClick }) {
           {prospect.nom}
         </h4>
         {overdue && (
-          <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" />
+          <span className="flex items-center gap-1 shrink-0 mt-0.5">
+            <AlertCircle size={16} className="text-warning" />
+            {isSuivi && (
+              <span className="text-[10px] font-medium text-warning">Relance due</span>
+            )}
+          </span>
         )}
       </div>
 
@@ -70,6 +78,39 @@ export default function KanbanCard({ prospect, onClick }) {
           </span>
         )}
       </div>
+
+      {/* Prescripteur badge */}
+      {prospect.statut === 'prescripteur' && prospect.type_prescripteur && (
+        <div className="flex items-center gap-1.5 mt-2">
+          <UserCheck size={12} className="text-amber-400" />
+          <span className="text-[10px] font-medium text-amber-400">
+            {getTypePrescripteurLabel(prospect.type_prescripteur)}
+          </span>
+          {prospect.nombre_deals_apportes > 0 && (
+            <span className="text-[10px] text-text-secondary ml-auto">
+              {prospect.nombre_deals_apportes} deal{prospect.nombre_deals_apportes > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Suivi tunnel: dernière interaction + nb relances */}
+      {isSuivi && (
+        <div className="flex items-center gap-3 mt-2 text-[10px] text-text-secondary">
+          {prospect.date_derniere_interaction && (
+            <span className="flex items-center gap-1">
+              <Clock size={10} />
+              {new Date(prospect.date_derniere_interaction).toLocaleDateString('fr-FR')}
+            </span>
+          )}
+          {prospect.nombre_relances_effectuees > 0 && (
+            <span className="flex items-center gap-1">
+              <RefreshCw size={10} />
+              {prospect.nombre_relances_effectuees} relance{prospect.nombre_relances_effectuees > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      )}
 
       {(prospect.simulateur_valorisation || prospect.diaglocal || prospect.guide_recu) && (
         <div className="flex gap-1.5 mt-2">

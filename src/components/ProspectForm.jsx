@@ -8,7 +8,10 @@ import {
   STATUTS,
   PROFILS_RESTAURATEUR,
   TYPES_CUISINE,
+  TYPES_PRESCRIPTEUR,
   SEUIL_MINIMUM_CESSION_FONDS,
+  SUIVI_STATUTS,
+  getDateRelanceSuivi,
 } from '../lib/constants'
 import { fetchCompanyBySiret } from '../lib/pappers'
 
@@ -49,6 +52,11 @@ const defaultValues = {
   diaglocal_adresse: '',
   diaglocal_notes: '',
   simulateur_estimation: null,
+  // Prescripteur & Suivi
+  type_prescripteur: '',
+  nombre_deals_apportes: 0,
+  nombre_relances_effectuees: 0,
+  date_derniere_interaction: null,
 }
 
 export default function ProspectForm({ prospect, onSubmit, onCancel }) {
@@ -74,6 +82,14 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
           next.taux_pourcentage = 1.3
         } else {
           next.mode_honoraires = 'forfait'
+        }
+      }
+      // Auto-set relance +90j quand on passe dans le tunnel Suivi
+      if (field === 'statut') {
+        const wasInSuivi = SUIVI_STATUTS.includes(prev.statut)
+        const nowInSuivi = SUIVI_STATUTS.includes(value)
+        if (!wasInSuivi && nowInSuivi && !prev.date_relance) {
+          next.date_relance = getDateRelanceSuivi()
         }
       }
       return next
@@ -123,6 +139,8 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     e.preventDefault()
     const data = { ...form }
     if (!data.date_relance) data.date_relance = null
+    if (!data.type_prescripteur) data.type_prescripteur = null
+    if (!data.date_derniere_interaction) data.date_derniere_interaction = null
     // Remove computed field
     delete data.ca_estime
     delete data.id
@@ -564,6 +582,52 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
           </div>
         )}
       </div>
+
+      {/* --- Prescripteur & Suivi (visible si statut dans tunnel suivi) --- */}
+      {SUIVI_STATUTS.includes(form.statut) && (
+        <div className={sectionClass}>
+          <h4 className={sectionTitle}>Prescripteur & Suivi long terme</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {form.statut === 'prescripteur' && (
+              <>
+                <div>
+                  <label className={labelClass}>Type de prescripteur</label>
+                  <select
+                    value={form.type_prescripteur}
+                    onChange={set('type_prescripteur')}
+                    className={inputClass}
+                  >
+                    <option value="">— Sélectionner —</option>
+                    {TYPES_PRESCRIPTEUR.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Deals apportés</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.nombre_deals_apportes}
+                    onChange={setNumber('nombre_deals_apportes')}
+                    className={inputClass}
+                  />
+                </div>
+              </>
+            )}
+            <div>
+              <label className={labelClass}>Nombre de relances effectuées</label>
+              <input
+                type="number"
+                min="0"
+                value={form.nombre_relances_effectuees}
+                onChange={setNumber('nombre_relances_effectuees')}
+                className={inputClass}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- Relance --- */}
       <div>
