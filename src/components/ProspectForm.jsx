@@ -46,6 +46,10 @@ const defaultValues = {
   nombre_salaries: null,
   siret: '',
   ca_annuel_declare: null,
+  // Franchise
+  est_franchise: false,
+  enseigne_franchise: '',
+  nombre_franchises: 1,
   // Expert comptable
   a_expert_comptable: false,
   nom_expert_comptable: '',
@@ -493,6 +497,46 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
               className={inputClass}
             />
           </div>
+        </div>
+
+        {/* Franchise */}
+        <div className="space-y-3 mt-3">
+          <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.est_franchise}
+              onChange={toggle('est_franchise')}
+              className="accent-primary w-4 h-4"
+            />
+            Franchisé
+          </label>
+          {form.est_franchise && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Enseigne</label>
+                <input
+                  type="text"
+                  value={form.enseigne_franchise}
+                  onChange={set('enseigne_franchise')}
+                  placeholder="Ex: McDonald's, Subway, Paul..."
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Nombre de franchises</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.nombre_franchises}
+                  onChange={setNumber('nombre_franchises')}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>SIRET</label>
             <div className="flex gap-2">

@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock, MessageCircle, Mail } from 'lucide-react'
+import { AlertCircle, Calculator, MapPin, BookOpen, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Store } from 'lucide-react'
 import { ScoreBadge } from './ScoreBadge'
 import { calculateScore } from '../lib/scoring'
 import {
@@ -99,12 +99,25 @@ export default function KanbanCard({ prospect, onClick }) {
           </span>
         )}
       </div>
-      {/* Cuisine type */}
-      {prospect.type_cuisine && (
-        <p className="text-[10px] text-text-secondary mt-1">
-          {TYPES_CUISINE.find(t => t.value === prospect.type_cuisine)?.label}
-          {prospect.nombre_salaries != null && ` · ${prospect.nombre_salaries} sal.`}
-        </p>
+      {/* Profil resto */}
+      {(prospect.type_cuisine || prospect.est_franchise) && (
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+          {prospect.type_cuisine && (
+            <span className="text-[10px] text-text-secondary">
+              {TYPES_CUISINE.find(t => t.value === prospect.type_cuisine)?.label}
+            </span>
+          )}
+          {prospect.est_franchise && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-pink-500/15 text-pink-400 flex items-center gap-0.5">
+              <Store size={9} />
+              {prospect.enseigne_franchise || 'Franchise'}
+              {prospect.nombre_franchises > 1 && ` ×${prospect.nombre_franchises}`}
+            </span>
+          )}
+          {prospect.nombre_salaries != null && (
+            <span className="text-[10px] text-text-secondary">· {prospect.nombre_salaries} sal.</span>
+          )}
+        </div>
       )}
 
       {/* Prescripteur badge */}

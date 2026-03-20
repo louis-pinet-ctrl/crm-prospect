@@ -316,6 +316,15 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                         <p className="text-text-primary">{prospect.nombre_salaries}</p>
                       </div>
                     )}
+                    {prospect.est_franchise && (
+                      <div>
+                        <span className="text-text-secondary text-xs">Franchise</span>
+                        <p className="text-pink-400 font-medium">
+                          {prospect.enseigne_franchise || 'Oui'}
+                          {prospect.nombre_franchises > 1 && ` (${prospect.nombre_franchises} points de vente)`}
+                        </p>
+                      </div>
+                    )}
                     {prospect.siret && (
                       <div>
                         <span className="text-text-secondary text-xs">SIRET</span>
