@@ -23,8 +23,8 @@ import {
   SUIVI_STATUTS,
   INTENTIONS,
   isRelanceOverdue,
-  RELANCE_TEMPLATES,
 } from '../lib/constants'
+import { generateRelanceTemplates } from '../lib/relanceTemplates'
 
 function formatWhatsAppUrl(phone) {
   if (!phone) return null
@@ -528,9 +528,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
               </div>
 
               {/* Templates de relance */}
-              {RELANCE_TEMPLATES[prospect.statut] && (
-                <RelanceTemplates prospect={prospect} onQuickAction={handleQuickAction} />
-              )}
+              <RelanceTemplates prospect={prospect} onQuickAction={handleQuickAction} />
 
               {/* Facturation */}
               <FacturesSection prospectId={prospect.id} caEstime={prospect.ca_estime} />
@@ -556,17 +554,16 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
 
 function RelanceTemplates({ prospect, onQuickAction }) {
   const [showTemplates, setShowTemplates] = useState(false)
-  const templates = RELANCE_TEMPLATES[prospect.statut]
+  const [showPreview, setShowPreview] = useState(null) // 'email' | 'whatsapp' | null
+
+  const templates = generateRelanceTemplates(prospect)
   if (!templates) return null
 
-  const emailTemplate = templates.email
-  const whatsappTemplate = templates.whatsapp
-
-  const emailUrl = prospect.email && emailTemplate
-    ? `mailto:${prospect.email}?subject=${encodeURIComponent(emailTemplate.subject(prospect))}&body=${encodeURIComponent(emailTemplate.body(prospect))}`
+  const emailUrl = prospect.email
+    ? `mailto:${prospect.email}?subject=${encodeURIComponent(templates.email.subject)}&body=${encodeURIComponent(templates.email.body)}`
     : null
 
-  const whatsappUrl = prospect.telephone && whatsappTemplate
+  const whatsappUrl = prospect.telephone
     ? (() => {
         const digits = prospect.telephone.replace(/[\s./-]/g, '')
         const num = digits.startsWith('0') && digits.length === 10
@@ -574,14 +571,14 @@ function RelanceTemplates({ prospect, onQuickAction }) {
           : digits.startsWith('+33') || digits.startsWith('33')
             ? digits.replace('+', '')
             : digits
-        return `https://wa.me/${num}?text=${encodeURIComponent(whatsappTemplate(prospect))}`
+        return `https://wa.me/${num}?text=${encodeURIComponent(templates.whatsapp)}`
       })()
     : null
 
   return (
     <div className="border-t border-border pt-3">
       <button
-        onClick={() => setShowTemplates(!showTemplates)}
+        onClick={() => { setShowTemplates(!showTemplates); setShowPreview(null) }}
         className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover transition-colors"
       >
         <Mail size={14} />
@@ -589,32 +586,77 @@ function RelanceTemplates({ prospect, onQuickAction }) {
       </button>
       {showTemplates && (
         <div className="mt-2 space-y-2">
+          {/* Email */}
           {emailUrl && (
-            <button
-              onClick={() => {
-                onQuickAction('email', emailUrl)
-                setShowTemplates(false)
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
-            >
-              <Mail size={14} />
-              Relance par email
-              <span className="ml-auto text-xs text-text-secondary">template pré-rempli</span>
-            </button>
+            <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2">
+                <Mail size={14} className="text-blue-400 shrink-0" />
+                <span className="text-sm text-blue-400 font-medium">Email</span>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <button
+                    onClick={() => setShowPreview(showPreview === 'email' ? null : 'email')}
+                    className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                  >
+                    {showPreview === 'email' ? 'Masquer' : 'Aperçu'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      onQuickAction('email', emailUrl)
+                      setShowTemplates(false)
+                    }}
+                    className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors font-medium"
+                  >
+                    Envoyer
+                  </button>
+                </div>
+              </div>
+              {showPreview === 'email' && (
+                <div className="px-3 pb-3 space-y-1.5">
+                  <div className="text-xs text-text-secondary">
+                    <span className="font-medium">Objet :</span> {templates.email.subject}
+                  </div>
+                  <div className="text-xs text-text-primary whitespace-pre-wrap bg-bg-main rounded-lg p-3 max-h-48 overflow-y-auto leading-relaxed">
+                    {templates.email.body}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
+
+          {/* WhatsApp */}
           {whatsappUrl && (
-            <button
-              onClick={() => {
-                onQuickAction('whatsapp', whatsappUrl, true)
-                setShowTemplates(false)
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors"
-            >
-              <MessageCircle size={14} />
-              Relance par WhatsApp
-              <span className="ml-auto text-xs text-text-secondary">message pré-rempli</span>
-            </button>
+            <div className="bg-green-500/5 border border-green-500/20 rounded-lg overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2">
+                <MessageCircle size={14} className="text-green-400 shrink-0" />
+                <span className="text-sm text-green-400 font-medium">WhatsApp</span>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <button
+                    onClick={() => setShowPreview(showPreview === 'whatsapp' ? null : 'whatsapp')}
+                    className="text-xs px-2 py-0.5 rounded bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
+                  >
+                    {showPreview === 'whatsapp' ? 'Masquer' : 'Aperçu'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      onQuickAction('whatsapp', whatsappUrl, true)
+                      setShowTemplates(false)
+                    }}
+                    className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors font-medium"
+                  >
+                    Envoyer
+                  </button>
+                </div>
+              </div>
+              {showPreview === 'whatsapp' && (
+                <div className="px-3 pb-3">
+                  <div className="text-xs text-text-primary whitespace-pre-wrap bg-bg-main rounded-lg p-3 max-h-32 overflow-y-auto leading-relaxed">
+                    {templates.whatsapp}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
+
           {!emailUrl && !whatsappUrl && (
             <p className="text-xs text-text-secondary">
               Ajoutez un email ou téléphone pour utiliser les templates.
