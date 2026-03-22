@@ -14,6 +14,7 @@ import KanbanCard from '../components/KanbanCard'
 import RelancesWidget from '../components/RelancesWidget'
 import PipelineSummary from '../components/PipelineSummary'
 import { STATUTS, TUNNELS, TYPES_DOSSIER, SOURCES, PRIORITES, SUIVI_STATUTS, getDateRelanceSuivi } from '../lib/constants'
+import { useToast } from '../components/Toast'
 
 export default function KanbanPage({
   prospects,
@@ -30,6 +31,7 @@ export default function KanbanPage({
   const [activeId, setActiveId] = useState(null)
   const [collapsedTunnels, setCollapsedTunnels] = useState({})
   const [filterClientExistant, setFilterClientExistant] = useState(false)
+  const toast = useToast()
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -118,6 +120,7 @@ export default function KanbanPage({
       await update(prospectId, updates)
     } catch (err) {
       console.error('Erreur lors du déplacement:', err)
+      toast.error('Erreur lors du déplacement du prospect')
     }
   }
 

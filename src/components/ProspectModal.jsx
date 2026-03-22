@@ -8,6 +8,7 @@ import FacturesSection from './FacturesSection'
 import { ScoreBreakdown } from './ScoreBadge'
 import { createNote, fetchNotes, updateProspectAfterInteraction } from '../lib/supabase'
 import { calculateScore } from '../lib/scoring'
+import { useToast } from './Toast'
 import {
   formatCurrency,
   getTypeDossierLabel,
@@ -39,6 +40,7 @@ function formatWhatsAppUrl(phone) {
 }
 
 export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, onAdd, onReload, onSelectProspect }) {
+  const toast = useToast()
   const [editing, setEditing] = useState(!prospect)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [scoreResult, setScoreResult] = useState(null)
@@ -69,6 +71,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
       if (onReload) onReload()
     } catch (err) {
       console.error('Erreur création interaction rapide:', err)
+      toast.error('Erreur lors de l\'enregistrement de l\'interaction')
     }
 
     // Ouvrir le lien
@@ -82,23 +85,29 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
   }
 
   const handleSubmit = async (data, pendingNote) => {
-    if (isNew) {
-      const created = await onAdd(data)
-      // Créer la note simulateur automatiquement après création du prospect
-      if (pendingNote && created?.id) {
-        try {
-          await createNote({
-            prospect_id: created.id,
-            contenu: pendingNote,
-            type_note: 'note_libre',
-          })
-        } catch (err) {
-          console.error('Erreur création note simulateur:', err)
+    try {
+      if (isNew) {
+        const created = await onAdd(data)
+        if (pendingNote && created?.id) {
+          try {
+            await createNote({
+              prospect_id: created.id,
+              contenu: pendingNote,
+              type_note: 'note_libre',
+            })
+          } catch (err) {
+            console.error('Erreur création note simulateur:', err)
+          }
         }
+        toast.success('Prospect créé')
+      } else {
+        await onUpdate(prospect.id, data)
+        setEditing(false)
+        toast.success('Prospect mis à jour')
       }
-    } else {
-      await onUpdate(prospect.id, data)
-      setEditing(false)
+    } catch (err) {
+      console.error('Erreur sauvegarde prospect:', err)
+      toast.error('Erreur lors de la sauvegarde')
     }
   }
 

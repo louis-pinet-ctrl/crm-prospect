@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Phone, Mail, MessageCircle, Calendar, FileText, StickyNote, CalendarClock, Pencil, Trash2, Check, X } from 'lucide-react'
 import { fetchNotes, createNote, updateNote, deleteNote, updateProspectAfterInteraction, updateProspect } from '../lib/supabase'
 import { TYPES_NOTE, TYPES_INTERACTION, RESULTATS_INTERACTION } from '../lib/constants'
+import { useToast } from './Toast'
 
 const ICONS = {
   appel: Phone,
@@ -23,6 +24,7 @@ const RESULTAT_COLORS = {
 }
 
 export default function NotesSection({ prospectId, onProspectUpdate }) {
+  const toast = useToast()
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [contenu, setContenu] = useState('')
@@ -87,8 +89,10 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
       setTypeNote('appel')
       setResultat('')
       setDateInteraction('')
+      toast.success('Note ajoutée')
     } catch (err) {
       console.error(err)
+      toast.error('Erreur lors de l\'ajout de la note')
     } finally {
       setSubmitting(false)
     }
@@ -98,8 +102,10 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
     try {
       const updated = await updateNote(noteId, { contenu: newContenu })
       setNotes(prev => prev.map(n => n.id === noteId ? updated : n))
+      toast.success('Note modifiée')
     } catch (err) {
       console.error('Erreur mise à jour note:', err)
+      toast.error('Erreur lors de la modification')
     }
   }
 
@@ -107,8 +113,10 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
     try {
       await deleteNote(noteId)
       setNotes(prev => prev.filter(n => n.id !== noteId))
+      toast.success('Note supprimée')
     } catch (err) {
       console.error('Erreur suppression note:', err)
+      toast.error('Erreur lors de la suppression')
     }
   }
 
@@ -116,8 +124,10 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
     try {
       await updateProspect(prospectId, { date_relance: dateStr })
       if (onProspectUpdate) onProspectUpdate()
+      toast.success('Relance planifiée')
     } catch (err) {
       console.error('Erreur mise à jour relance:', err)
+      toast.error('Erreur lors de la planification')
     }
   }
 

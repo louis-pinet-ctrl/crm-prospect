@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Check, X, Receipt } from 'lucide-react'
 import { fetchFactures, createFacture, updateFacture, deleteFacture } from '../lib/supabase'
 import { formatCurrency } from '../lib/constants'
+import { useToast } from './Toast'
 
 export default function FacturesSection({ prospectId, caEstime }) {
+  const toast = useToast()
   const [factures, setFactures] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -42,8 +44,10 @@ export default function FacturesSection({ prospectId, caEstime }) {
       })
       setFactures(prev => [...prev, facture])
       resetForm()
+      toast.success('Facture ajoutée')
     } catch (err) {
       console.error('Erreur création facture:', err)
+      toast.error('Erreur lors de l\'ajout de la facture')
     } finally {
       setSubmitting(false)
     }
@@ -53,8 +57,12 @@ export default function FacturesSection({ prospectId, caEstime }) {
     try {
       const updated = await updateFacture(id, updates)
       setFactures(prev => prev.map(f => (f.id === id ? updated : f)))
+      toast.success('Facture modifiée')
+      return true
     } catch (err) {
       console.error('Erreur mise à jour facture:', err)
+      toast.error('Erreur lors de la modification')
+      return false
     }
   }
 
@@ -62,8 +70,10 @@ export default function FacturesSection({ prospectId, caEstime }) {
     try {
       await deleteFacture(id)
       setFactures(prev => prev.filter(f => f.id !== id))
+      toast.success('Facture supprimée')
     } catch (err) {
       console.error('Erreur suppression facture:', err)
+      toast.error('Erreur lors de la suppression')
     }
   }
 
@@ -236,14 +246,17 @@ function FactureItem({ facture, onUpdate, onDelete, formatDate }) {
     e.preventDefault()
     if (!editData.montant) return
     setSaving(true)
-    await onUpdate(facture.id, {
-      montant: parseFloat(editData.montant),
-      description: editData.description || null,
-      numero_facture: editData.numero_facture || null,
-      date_facture: editData.date_facture || null,
-    })
-    setSaving(false)
-    setEditing(false)
+    try {
+      const ok = await onUpdate(facture.id, {
+        montant: parseFloat(editData.montant),
+        description: editData.description || null,
+        numero_facture: editData.numero_facture || null,
+        date_facture: editData.date_facture || null,
+      })
+      if (ok) setEditing(false)
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (editing) {

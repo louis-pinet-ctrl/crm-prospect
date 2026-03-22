@@ -19,6 +19,7 @@ import ListPage from './pages/ListPage'
 import LoginPage from './pages/LoginPage'
 import CommentairesPage from './pages/CommentairesPage'
 import ProspectModal from './components/ProspectModal'
+import { useToast } from './components/Toast'
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -28,6 +29,7 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false)
   const prospectData = useProspects()
   const location = useLocation()
+  const toast = useToast()
 
   useEffect(() => {
     getSession().then(s => {
@@ -188,8 +190,13 @@ export default function App() {
           onClose={() => setSelectedProspect(null)}
           onUpdate={prospectData.update}
           onDelete={async (id) => {
-            await prospectData.remove(id)
-            setSelectedProspect(null)
+            try {
+              await prospectData.remove(id)
+              setSelectedProspect(null)
+              toast.success('Prospect supprimé')
+            } catch (err) {
+              toast.error('Erreur lors de la suppression')
+            }
           }}
           onReload={() => prospectData.reload()}
           onSelectProspect={async (p) => {
