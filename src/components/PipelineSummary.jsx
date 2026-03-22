@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Users, TrendingUp, Target, Briefcase } from 'lucide-react'
-import { TUNNELS, STATUTS, formatCurrency } from '../lib/constants'
+import { TUNNELS, STATUTS, formatCurrency, CA_OBJECTIFS } from '../lib/constants'
 
 export default function PipelineSummary({ prospects }) {
   const stats = useMemo(() => {
@@ -34,6 +34,10 @@ export default function PipelineSummary({ prospects }) {
     return { totalActive, pipelineValue, closingCount, closingValue, tunnelCounts }
   }, [prospects])
 
+  const objectifMax = CA_OBJECTIFS[CA_OBJECTIFS.length - 1].amount
+  const pctPipeline = objectifMax > 0 ? Math.min(100, Math.round((stats.pipelineValue / objectifMax) * 100)) : 0
+  const pctClosing = objectifMax > 0 ? Math.min(100, Math.round((stats.closingValue / objectifMax) * 100)) : 0
+
   const cards = [
     {
       icon: Users,
@@ -46,6 +50,8 @@ export default function PipelineSummary({ prospects }) {
       label: 'Pipe total',
       value: formatCurrency(stats.pipelineValue),
       color: 'text-success',
+      pct: pctPipeline,
+      barColor: '#4dff88',
     },
     {
       icon: Briefcase,
@@ -53,6 +59,8 @@ export default function PipelineSummary({ prospects }) {
       value: stats.closingCount,
       sub: formatCurrency(stats.closingValue),
       color: 'text-purple-400',
+      pct: pctClosing,
+      barColor: '#a78bfa',
     },
     {
       icon: Target,
@@ -69,9 +77,22 @@ export default function PipelineSummary({ prospects }) {
           <div className="flex items-center gap-2 mb-1">
             <card.icon size={14} className={card.color} />
             <span className="text-xs text-text-secondary">{card.label}</span>
+            {card.pct != null && (
+              <span className={`ml-auto text-xs font-medium ${card.pct >= 100 ? 'text-success' : 'text-text-secondary'}`}>
+                {card.pct}%
+              </span>
+            )}
           </div>
           <p className={`text-lg font-semibold ${card.color}`}>{card.value}</p>
           {card.sub && <p className="text-xs text-text-secondary">{card.sub}</p>}
+          {card.pct != null && (
+            <div className="w-full h-1.5 bg-bg-main rounded-full overflow-hidden mt-2">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${card.pct}%`, backgroundColor: card.barColor }}
+              />
+            </div>
+          )}
         </div>
       ))}
     </div>

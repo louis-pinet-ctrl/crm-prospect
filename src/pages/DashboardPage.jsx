@@ -367,16 +367,43 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
         const toPercent = (v) => Math.min(100, (v / scaleMax) * 100)
         const { facture, enCours, pipeline } = yearStats
         const total = facture + enCours + pipeline
+        const pctFacture = maxAmount > 0 ? Math.round((facture / maxAmount) * 100) : 0
+        const pctEnCours = maxAmount > 0 ? Math.round((enCours / maxAmount) * 100) : 0
+        const pctPipeline = maxAmount > 0 ? Math.round((pipeline / maxAmount) * 100) : 0
+        const pctTotal = maxAmount > 0 ? Math.round((total / maxAmount) * 100) : 0
 
         return (
           <div className="bg-bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-1">
               <span className="text-sm font-medium text-text-primary">
                 Objectifs annuels
               </span>
               <span className="text-xs text-text-secondary">
                 Total potentiel : {formatCurrency(total)}
+                <span className={`ml-1 font-medium ${pctTotal >= 100 ? 'text-success' : 'text-text-primary'}`}>
+                  ({pctTotal}%)
+                </span>
               </span>
+            </div>
+
+            {/* Paliers atteints */}
+            <div className="flex flex-wrap gap-3 mb-3">
+              {CA_OBJECTIFS.map(obj => {
+                const pct = maxAmount > 0 ? Math.round((facture / obj.amount) * 100) : 0
+                const reached = facture >= obj.amount
+                return (
+                  <span
+                    key={obj.key}
+                    className="text-xs px-2 py-0.5 rounded-full"
+                    style={{
+                      backgroundColor: (reached ? obj.color : '#555') + '20',
+                      color: reached ? obj.color : '#777',
+                    }}
+                  >
+                    {obj.label} : {pct}%
+                  </span>
+                )
+              })}
             </div>
 
             {/* Barre de progression */}
@@ -428,15 +455,24 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
             <div className="flex flex-wrap gap-4 mt-3">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#4dff88' }} />
-                <span className="text-xs text-text-secondary">Facturé : {formatCurrency(facture)}</span>
+                <span className="text-xs text-text-secondary">
+                  Facturé : {formatCurrency(facture)}
+                  <span className="font-medium text-success ml-1">({pctFacture}%)</span>
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm opacity-60" style={{ backgroundColor: '#c4e913' }} />
-                <span className="text-xs text-text-secondary">En cours : {formatCurrency(enCours)}</span>
+                <span className="text-xs text-text-secondary">
+                  En cours : {formatCurrency(enCours)}
+                  <span className="font-medium text-primary ml-1">({pctEnCours}%)</span>
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm opacity-30" style={{ backgroundColor: '#ffb84d' }} />
-                <span className="text-xs text-text-secondary">Pipeline : {formatCurrency(pipeline)}</span>
+                <span className="text-xs text-text-secondary">
+                  Pipeline : {formatCurrency(pipeline)}
+                  <span className="font-medium text-warning ml-1">({pctPipeline}%)</span>
+                </span>
               </div>
             </div>
           </div>
