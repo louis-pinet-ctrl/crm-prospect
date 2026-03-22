@@ -160,7 +160,13 @@ export function getTypePrescripteurLabel(type) {
   return TYPES_PRESCRIPTEUR.find(t => t.value === type)?.label || type || ''
 }
 
-export const CA_OBJECTIF = 300000
+export const CA_OBJECTIFS = [
+  { key: 'minimum', label: 'Objectif minimum', amount: 115000, color: '#f97316' },
+  { key: 'classique', label: 'Objectif classique', amount: 150000, color: '#c4e913' },
+  { key: 'ambitieux', label: 'Objectif ambitieux', amount: 200000, color: '#4dff88' },
+]
+
+export const CA_OBJECTIF = CA_OBJECTIFS[CA_OBJECTIFS.length - 1].amount
 
 export function formatCurrency(amount) {
   return new Intl.NumberFormat('fr-FR', {

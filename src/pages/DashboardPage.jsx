@@ -17,7 +17,7 @@ import {
 import { TrendingUp, Target, Briefcase, Users, Calendar, ArrowRight } from 'lucide-react'
 import {
   formatCurrency,
-  CA_OBJECTIF,
+  CA_OBJECTIFS,
   TYPES_DOSSIER,
   SOURCES,
   STATUTS,
@@ -95,10 +95,6 @@ export default function DashboardPage({ prospects }) {
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
   }, [prospects])
 
-  const progressPercent = Math.min(
-    100,
-    Math.round((yearFacture / CA_OBJECTIF) * 100)
-  )
 
   // --- Conversion rate per stage (pipeline only, excl. prescripteur/suivi/perdu) ---
   const conversionData = useMemo(() => {
@@ -326,23 +322,43 @@ export default function DashboardPage({ prospects }) {
         ))}
       </div>
 
-      {/* Objectif */}
+      {/* Objectifs par palier */}
       <div className="bg-bg-card border border-border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-text-secondary">
-            Objectif annuel : {formatCurrency(CA_OBJECTIF)}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-text-primary">
+            Objectifs annuels
           </span>
-          <span className="text-sm font-medium text-primary">{progressPercent}%</span>
+          <span className="text-sm text-text-secondary">
+            {formatCurrency(yearFacture)} facturé
+          </span>
         </div>
-        <div className="w-full h-3 bg-bg-main rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all"
-            style={{ width: `${progressPercent}%` }}
-          />
+        <div className="space-y-3">
+          {CA_OBJECTIFS.map(obj => {
+            const pct = Math.min(100, Math.round((yearFacture / obj.amount) * 100))
+            const reached = yearFacture >= obj.amount
+            return (
+              <div key={obj.key}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-text-secondary">
+                    {obj.label} : {formatCurrency(obj.amount)}
+                  </span>
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color: reached ? obj.color : '#a0a0a0' }}
+                  >
+                    {reached ? 'Atteint' : `${pct}%`}
+                  </span>
+                </div>
+                <div className="w-full h-2.5 bg-bg-main rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${pct}%`, backgroundColor: obj.color }}
+                  />
+                </div>
+              </div>
+            )
+          })}
         </div>
-        <p className="text-xs text-text-secondary mt-1">
-          {formatCurrency(yearFacture)} facturé sur {formatCurrency(CA_OBJECTIF)}
-        </p>
       </div>
 
       {/* CA Forecast next 3 months */}
