@@ -10,11 +10,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  FunnelChart,
-  Funnel,
-  LabelList,
 } from 'recharts'
-import { TrendingUp, Target, Briefcase, Users, Calendar, ArrowRight } from 'lucide-react'
+import { TrendingUp, Target, Briefcase, Users, Calendar } from 'lucide-react'
 import {
   formatCurrency,
   CA_OBJECTIFS,
