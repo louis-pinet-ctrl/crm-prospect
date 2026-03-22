@@ -5,7 +5,9 @@ import {
   createProspect,
   updateProspect,
   deleteProspect,
+  createNote,
 } from '../lib/supabase'
+import { STATUTS } from '../lib/constants'
 
 export function useProspects() {
   const [prospects, setProspects] = useState([])
@@ -41,6 +43,24 @@ export function useProspects() {
   }
 
   const update = async (id, updates) => {
+    // Détecter le changement de statut pour auto-log
+    if (updates.statut) {
+      const old = prospects.find(p => p.id === id)
+      if (old && old.statut !== updates.statut) {
+        const oldLabel = STATUTS.find(s => s.value === old.statut)?.label || old.statut
+        const newLabel = STATUTS.find(s => s.value === updates.statut)?.label || updates.statut
+        try {
+          await createNote({
+            prospect_id: id,
+            contenu: `${oldLabel} → ${newLabel}`,
+            type_note: 'note_libre',
+          })
+        } catch (err) {
+          console.error('Erreur log changement statut:', err)
+        }
+      }
+    }
+
     const data = await updateProspect(id, updates)
     setProspects(prev => prev.map(p => (p.id === id ? data : p)))
     return data

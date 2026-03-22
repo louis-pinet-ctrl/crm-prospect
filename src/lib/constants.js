@@ -168,6 +168,16 @@ export const CA_OBJECTIFS = [
 
 export const CA_OBJECTIF = CA_OBJECTIFS[CA_OBJECTIFS.length - 1].amount
 
+// Objectifs dérivés par période (basés sur l'objectif classique)
+export function getObjectifPeriode(period) {
+  const classique = CA_OBJECTIFS.find(o => o.key === 'classique')?.amount || 150000
+  switch (period) {
+    case 'month': return Math.round(classique / 12)
+    case 'quarter': return Math.round(classique / 4)
+    default: return classique
+  }
+}
+
 export function formatCurrency(amount) {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
@@ -189,3 +199,59 @@ export function isRelanceOverdue(dateRelance) {
   if (!dateRelance) return false
   return new Date(dateRelance) <= new Date(new Date().toDateString())
 }
+
+// Templates de relance par statut
+export const RELANCE_TEMPLATES = {
+  prospect_identifie: {
+    email: {
+      subject: (p) => `${p.nom} — Prise de contact`,
+      body: (p) => `Bonjour ${p.nom},\n\nJe me permets de vous contacter suite à votre intérêt pour un accompagnement juridique concernant votre projet de ${getTypeDossierLabel(p.type_dossier).toLowerCase()}.\n\nSeriez-vous disponible pour un premier échange ?\n\nBien cordialement`,
+    },
+    whatsapp: (p) => `Bonjour ${p.nom}, je me permets de vous contacter concernant votre projet de ${getTypeDossierLabel(p.type_dossier).toLowerCase()}. Seriez-vous disponible pour un premier échange ?`,
+  },
+  premier_contact: {
+    email: {
+      subject: (p) => `${p.nom} — Suite à notre échange`,
+      body: (p) => `Bonjour ${p.nom},\n\nJe reviens vers vous suite à notre premier échange concernant votre projet de ${getTypeDossierLabel(p.type_dossier).toLowerCase()}.\n\nAvez-vous eu le temps de réfléchir à nos propositions ?\n\nJe reste à votre disposition.\n\nBien cordialement`,
+    },
+    whatsapp: (p) => `Bonjour ${p.nom}, je reviens vers vous suite à notre échange. Avez-vous pu avancer sur votre projet de ${getTypeDossierLabel(p.type_dossier).toLowerCase()} ? Je reste disponible.`,
+  },
+  diagnostic_rdv: {
+    email: {
+      subject: (p) => `${p.nom} — Retour diagnostic`,
+      body: (p) => `Bonjour ${p.nom},\n\nJe reviens vers vous suite à notre rendez-vous de diagnostic.\n\nJe souhaitais savoir si vous aviez des questions complémentaires et si vous souhaitez poursuivre l'accompagnement.\n\nBien cordialement`,
+    },
+    whatsapp: (p) => `Bonjour ${p.nom}, je reviens vers vous après notre RDV. Avez-vous des questions ? Souhaitez-vous qu'on avance ensemble ?`,
+  },
+  relance_en_attente: {
+    email: {
+      subject: (p) => `${p.nom} — Relance`,
+      body: (p) => `Bonjour ${p.nom},\n\nJe me permets de revenir vers vous concernant votre dossier de ${getTypeDossierLabel(p.type_dossier).toLowerCase()}.\n\nN'hésitez pas à me contacter si vous avez la moindre question.\n\nBien cordialement`,
+    },
+    whatsapp: (p) => `Bonjour ${p.nom}, je me permets de vous relancer concernant votre dossier. Avez-vous eu le temps d'y réfléchir ?`,
+  },
+  lettre_mission_envoyee: {
+    email: {
+      subject: (p) => `${p.nom} — Lettre de mission`,
+      body: (p) => `Bonjour ${p.nom},\n\nJe reviens vers vous concernant la lettre de mission que je vous ai adressée.\n\nAvez-vous pu la consulter ? Je reste à votre disposition pour en discuter.\n\nBien cordialement`,
+    },
+    whatsapp: (p) => `Bonjour ${p.nom}, avez-vous pu consulter la lettre de mission ? N'hésitez pas si vous avez des questions.`,
+  },
+  prescripteur: {
+    email: {
+      subject: () => `Prise de nouvelles`,
+      body: (p) => `Bonjour ${p.nom},\n\nJe souhaitais prendre de vos nouvelles et savoir si vous aviez de nouveaux contacts à m'orienter.\n\nJe reste à votre disposition.\n\nBien cordialement`,
+    },
+    whatsapp: (p) => `Bonjour ${p.nom}, je prends de vos nouvelles. Avez-vous des contacts qui auraient besoin d'un accompagnement juridique ?`,
+  },
+  suivi_long_terme: {
+    email: {
+      subject: (p) => `${p.nom} — Prise de nouvelles`,
+      body: (p) => `Bonjour ${p.nom},\n\nJe souhaitais prendre de vos nouvelles et savoir où en est votre projet.\n\nN'hésitez pas à me recontacter quand vous serez prêt.\n\nBien cordialement`,
+    },
+    whatsapp: (p) => `Bonjour ${p.nom}, je prends de vos nouvelles. Où en êtes-vous dans votre projet ? Je reste disponible.`,
+  },
+}
+
+// Seuil de jours sans interaction pour considérer un prospect comme dormant
+export const SEUIL_DORMANT_JOURS = 14

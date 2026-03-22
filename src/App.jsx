@@ -9,6 +9,8 @@ import {
   LogOut,
   Menu,
   X,
+  Search,
+  CalendarDays,
 } from 'lucide-react'
 import { useProspects } from './hooks/useProspects'
 import { onAuthStateChange, signOut, getSession, supabase } from './lib/supabase'
@@ -18,7 +20,9 @@ import DashboardPage from './pages/DashboardPage'
 import ListPage from './pages/ListPage'
 import LoginPage from './pages/LoginPage'
 import CommentairesPage from './pages/CommentairesPage'
+import AgendaPage from './pages/AgendaPage'
 import ProspectModal from './components/ProspectModal'
+import GlobalSearch from './components/GlobalSearch'
 import { useToast } from './components/Toast'
 
 export default function App() {
@@ -27,6 +31,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [selectedProspect, setSelectedProspect] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
   const prospectData = useProspects()
   const location = useLocation()
   const toast = useToast()
@@ -54,6 +59,18 @@ export default function App() {
     setSidebarOpen(false)
   }, [location])
 
+  // Ctrl+K / Cmd+K pour ouvrir la recherche globale
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setShowSearch(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-bg-main">
@@ -73,6 +90,7 @@ export default function App() {
   const navItems = [
     { to: '/', icon: Kanban, label: 'Kanban' },
     { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
+    { to: '/agenda', icon: CalendarDays, label: 'Agenda' },
     { to: '/list', icon: List, label: 'Liste' },
     { to: '/commentaires', icon: MessageSquare, label: 'Commentaires' },
   ]
@@ -112,6 +130,16 @@ export default function App() {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
+          {/* Recherche globale */}
+          <button
+            onClick={() => setShowSearch(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors"
+          >
+            <Search size={18} />
+            <span className="flex-1 text-left">Rechercher</span>
+            <kbd className="text-[10px] px-1.5 py-0.5 bg-bg-main border border-border rounded">⌘K</kbd>
+          </button>
+
           {/* eslint-disable-next-line no-unused-vars */}
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
@@ -167,6 +195,15 @@ export default function App() {
             element={<DashboardPage prospects={prospectData.prospects} allFactures={prospectData.allFactures} />}
           />
           <Route
+            path="/agenda"
+            element={
+              <AgendaPage
+                prospects={prospectData.prospects}
+                onSelectProspect={setSelectedProspect}
+              />
+            }
+          />
+          <Route
             path="/commentaires"
             element={<CommentairesPage />}
           />
@@ -194,7 +231,7 @@ export default function App() {
               await prospectData.remove(id)
               setSelectedProspect(null)
               toast.success('Prospect supprimé')
-            } catch (err) {
+            } catch {
               toast.error('Erreur lors de la suppression')
             }
           }}
@@ -218,6 +255,18 @@ export default function App() {
             setShowAddModal(false)
             return created
           }}
+        />
+      )}
+
+      {/* Global search (Ctrl+K) */}
+      {showSearch && (
+        <GlobalSearch
+          prospects={prospectData.prospects}
+          onSelectProspect={(p) => {
+            setSelectedProspect(p)
+            setShowSearch(false)
+          }}
+          onClose={() => setShowSearch(false)}
         />
       )}
     </div>

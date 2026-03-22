@@ -22,6 +22,7 @@ import {
   SUIVI_STATUTS,
   INTENTIONS,
   isRelanceOverdue,
+  RELANCE_TEMPLATES,
 } from '../lib/constants'
 
 function formatWhatsAppUrl(phone) {
@@ -496,6 +497,11 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                 )}
               </div>
 
+              {/* Templates de relance */}
+              {RELANCE_TEMPLATES[prospect.statut] && (
+                <RelanceTemplates prospect={prospect} onQuickAction={handleQuickAction} />
+              )}
+
               {/* Facturation */}
               <FacturesSection prospectId={prospect.id} caEstime={prospect.ca_estime} />
 
@@ -514,6 +520,78 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function RelanceTemplates({ prospect, onQuickAction }) {
+  const [showTemplates, setShowTemplates] = useState(false)
+  const templates = RELANCE_TEMPLATES[prospect.statut]
+  if (!templates) return null
+
+  const emailTemplate = templates.email
+  const whatsappTemplate = templates.whatsapp
+
+  const emailUrl = prospect.email && emailTemplate
+    ? `mailto:${prospect.email}?subject=${encodeURIComponent(emailTemplate.subject(prospect))}&body=${encodeURIComponent(emailTemplate.body(prospect))}`
+    : null
+
+  const whatsappUrl = prospect.telephone && whatsappTemplate
+    ? (() => {
+        const digits = prospect.telephone.replace(/[\s./-]/g, '')
+        const num = digits.startsWith('0') && digits.length === 10
+          ? `33${digits.slice(1)}`
+          : digits.startsWith('+33') || digits.startsWith('33')
+            ? digits.replace('+', '')
+            : digits
+        return `https://wa.me/${num}?text=${encodeURIComponent(whatsappTemplate(prospect))}`
+      })()
+    : null
+
+  return (
+    <div className="border-t border-border pt-3">
+      <button
+        onClick={() => setShowTemplates(!showTemplates)}
+        className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover transition-colors"
+      >
+        <Mail size={14} />
+        Relancer avec un template
+      </button>
+      {showTemplates && (
+        <div className="mt-2 space-y-2">
+          {emailUrl && (
+            <button
+              onClick={() => {
+                onQuickAction('email', emailUrl)
+                setShowTemplates(false)
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
+            >
+              <Mail size={14} />
+              Relance par email
+              <span className="ml-auto text-xs text-text-secondary">template pré-rempli</span>
+            </button>
+          )}
+          {whatsappUrl && (
+            <button
+              onClick={() => {
+                onQuickAction('whatsapp', whatsappUrl, true)
+                setShowTemplates(false)
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors"
+            >
+              <MessageCircle size={14} />
+              Relance par WhatsApp
+              <span className="ml-auto text-xs text-text-secondary">message pré-rempli</span>
+            </button>
+          )}
+          {!emailUrl && !whatsappUrl && (
+            <p className="text-xs text-text-secondary">
+              Ajoutez un email ou téléphone pour utiliser les templates.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

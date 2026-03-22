@@ -11,7 +11,7 @@ import {
   Pie,
   Cell,
 } from 'recharts'
-import { TrendingUp, Target, Briefcase, Users, Calendar } from 'lucide-react'
+import { TrendingUp, Target, Briefcase, Users, Calendar, TrendingDown } from 'lucide-react'
 import {
   formatCurrency,
   CA_OBJECTIFS,
@@ -19,6 +19,8 @@ import {
   SOURCES,
   STATUTS,
   STAGE_PROBABILITY,
+  getObjectifPeriode,
+  SEUIL_DORMANT_JOURS,
 } from '../lib/constants'
 
 const PERIOD_OPTIONS = [
@@ -292,6 +294,39 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
     })).filter(d => d.value > 0)
   }, [filteredProspects])
 
+  // Taux de conversion par source
+  const conversionBySourceData = useMemo(() => {
+    const colors = ['#c4e913', '#6366f1', '#ec4899', '#f97316', '#3b82f6', '#6b7280']
+    const wonStatuts = ['mission_en_cours', 'facture', 'cloture']
+    return SOURCES.map((s, i) => {
+      const total = filteredProspects.filter(p => p.source === s.value).length
+      const won = filteredProspects.filter(p => p.source === s.value && wonStatuts.includes(p.statut)).length
+      const taux = total > 0 ? Math.round((won / total) * 100) : 0
+      return { name: s.label, total, won, taux, color: colors[i % colors.length] }
+    }).filter(d => d.total > 0)
+  }, [filteredProspects])
+
+  // Objectif de la période sélectionnée
+  const objectifPeriode = useMemo(() => {
+    if (period === 'all') return null
+    const target = getObjectifPeriode(period)
+    const pct = target > 0 ? Math.round((stats.facture / target) * 100) : 0
+    return { target, pct }
+  }, [period, stats.facture])
+
+  // Prospects dormants (sans interaction depuis SEUIL_DORMANT_JOURS jours)
+  const dormants = useMemo(() => {
+    const now = new Date()
+    const seuil = new Date(now.getTime() - SEUIL_DORMANT_JOURS * 24 * 60 * 60 * 1000)
+    return filteredProspects.filter(p => {
+      if (['cloture', 'perdu_refuse', 'facture', 'prescripteur'].includes(p.statut)) return false
+      const lastInteraction = p.date_derniere_interaction
+        ? new Date(p.date_derniere_interaction)
+        : p.date_creation ? new Date(p.date_creation) : null
+      return lastInteraction && lastInteraction < seuil
+    })
+  }, [filteredProspects])
+
   const kpis = [
     {
       label: 'CA facturé',
@@ -359,6 +394,39 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
           </div>
         ))}
       </div>
+
+      {/* Objectif de la période */}
+      {objectifPeriode && (
+        <div className="bg-bg-card border border-border rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-text-primary">
+              Objectif {period === 'month' ? 'mensuel' : period === 'quarter' ? 'trimestriel' : 'annuel'}
+            </span>
+            <span className="text-xs text-text-secondary">
+              {formatCurrency(stats.facture)} / {formatCurrency(objectifPeriode.target)}
+            </span>
+          </div>
+          <div className="w-full h-3 bg-bg-main rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${Math.min(100, objectifPeriode.pct)}%`,
+                backgroundColor: objectifPeriode.pct >= 100 ? '#4dff88' : objectifPeriode.pct >= 70 ? '#c4e913' : '#ffb84d',
+              }}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <span className={`text-xs font-medium ${objectifPeriode.pct >= 100 ? 'text-success' : 'text-text-secondary'}`}>
+              {objectifPeriode.pct}% atteint
+            </span>
+            {objectifPeriode.pct < 100 && (
+              <span className="text-xs text-text-secondary">
+                Reste {formatCurrency(objectifPeriode.target - stats.facture)}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Objectifs annuels — barre unique avec paliers et curseurs */}
       {(() => {
@@ -646,7 +714,78 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
             </p>
           )}
         </div>
+
+        {/* Taux de conversion par source */}
+        <div className="bg-bg-card border border-border rounded-lg p-4">
+          <h3 className="text-sm font-medium text-text-primary mb-4">
+            Taux de conversion par source
+          </h3>
+          {conversionBySourceData.length > 0 ? (
+            <div className="space-y-3">
+              {conversionBySourceData.map(s => (
+                <div key={s.name}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-text-secondary">{s.name}</span>
+                    <span className="text-xs text-text-primary">
+                      {s.won}/{s.total}
+                      <span className="font-medium ml-1" style={{ color: s.color }}>
+                        ({s.taux}%)
+                      </span>
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-bg-main rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${s.taux}%`, backgroundColor: s.color }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-text-secondary text-sm text-center py-12">
+              Aucune donnée
+            </p>
+          )}
+        </div>
       </div>
+
+      {/* Prospects dormants */}
+      {dormants.length > 0 && (
+        <div className="bg-warning/5 border border-warning/20 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingDown size={16} className="text-warning" />
+            <h3 className="text-sm font-medium text-warning">
+              Prospects dormants ({dormants.length})
+            </h3>
+            <span className="text-xs text-text-secondary ml-auto">
+              Sans interaction depuis +{SEUIL_DORMANT_JOURS} jours
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {dormants.slice(0, 9).map(p => {
+              const lastDate = p.date_derniere_interaction || p.date_creation
+              const daysAgo = lastDate
+                ? Math.round((new Date() - new Date(lastDate)) / (1000 * 60 * 60 * 24))
+                : '?'
+              return (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-2 px-3 py-2 bg-bg-card rounded-lg text-sm"
+                >
+                  <span className="text-text-primary truncate flex-1">{p.nom}</span>
+                  <span className="text-xs text-warning shrink-0">{daysAgo}j</span>
+                </div>
+              )
+            })}
+            {dormants.length > 9 && (
+              <div className="flex items-center justify-center px-3 py-2 text-xs text-text-secondary">
+                +{dormants.length - 9} autres
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { Bell, ChevronDown, ChevronUp, AlertCircle, Clock } from 'lucide-react'
-import { isRelanceOverdue } from '../lib/constants'
+import { useState, useMemo } from 'react'
+import { Bell, ChevronDown, ChevronUp, AlertCircle, Clock, TrendingDown } from 'lucide-react'
+import { isRelanceOverdue, SEUIL_DORMANT_JOURS } from '../lib/constants'
 
 export default function RelancesWidget({ prospects, onSelectProspect }) {
   const [expanded, setExpanded] = useState(false)
@@ -15,7 +15,20 @@ export default function RelancesWidget({ prospects, onSelectProspect }) {
     p.date_relance && isRelanceOverdue(p.date_relance) && !p.date_relance.startsWith(today)
   )
 
-  const total = relancesToday.length + relancesOverdue.length
+  const now = new Date()
+  const dormants = useMemo(() => {
+    const seuil = new Date(now.getTime() - SEUIL_DORMANT_JOURS * 24 * 60 * 60 * 1000)
+    return prospects.filter(p => {
+      if (['cloture', 'perdu_refuse', 'facture', 'prescripteur'].includes(p.statut)) return false
+      const last = p.date_derniere_interaction
+        ? new Date(p.date_derniere_interaction)
+        : p.date_creation ? new Date(p.date_creation) : null
+      return last && last < seuil
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prospects])
+
+  const total = relancesToday.length + relancesOverdue.length + dormants.length
   if (total === 0) return null
 
   return (
@@ -36,6 +49,12 @@ export default function RelancesWidget({ prospects, onSelectProspect }) {
             <span className="flex items-center gap-1 text-warning font-medium">
               <Clock size={14} />
               {relancesToday.length} aujourd'hui
+            </span>
+          )}
+          {dormants.length > 0 && (
+            <span className="flex items-center gap-1 text-orange-400 font-medium">
+              <TrendingDown size={14} />
+              {dormants.length} dormant{dormants.length > 1 ? 's' : ''}
             </span>
           )}
         </div>
@@ -71,6 +90,34 @@ export default function RelancesWidget({ prospects, onSelectProspect }) {
               <span className="text-warning text-xs shrink-0">Aujourd'hui</span>
             </button>
           ))}
+          {dormants.length > 0 && (
+            <>
+              <div className="px-4 py-1.5 bg-bg-main text-xs text-orange-400 font-medium flex items-center gap-1.5">
+                <TrendingDown size={12} />
+                Dormants (+{SEUIL_DORMANT_JOURS}j sans interaction)
+              </div>
+              {dormants.slice(0, 5).map(p => {
+                const last = p.date_derniere_interaction || p.date_creation
+                const days = last ? Math.round((now.getTime() - new Date(last).getTime()) / (1000 * 60 * 60 * 24)) : '?'
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => onSelectProspect(p)}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-bg-hover transition-colors text-left"
+                  >
+                    <TrendingDown size={12} className="text-orange-400 shrink-0" />
+                    <span className="text-text-primary truncate flex-1">{p.nom}</span>
+                    <span className="text-orange-400 text-xs shrink-0">{days}j</span>
+                  </button>
+                )
+              })}
+              {dormants.length > 5 && (
+                <div className="px-4 py-1.5 text-xs text-text-secondary text-center">
+                  +{dormants.length - 5} autres
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
