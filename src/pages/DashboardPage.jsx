@@ -51,7 +51,7 @@ const tooltipStyle = {
   color: '#fff',
 }
 
-export default function DashboardPage({ prospects }) {
+export default function DashboardPage({ prospects, facturesTotaux = {} }) {
   const [period, setPeriod] = useState('year')
 
   const filteredProspects = useMemo(() => {
@@ -65,15 +65,25 @@ export default function DashboardPage({ prospects }) {
   }, [prospects, period])
 
   const stats = useMemo(() => {
+    // CA facturé = somme des vraies factures émises (table factures)
     const facture = filteredProspects
       .filter(p => ['facture', 'cloture'].includes(p.statut))
-      .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
+      .reduce((sum, p) => sum + (facturesTotaux[p.id]?.total || 0), 0)
+
+    // CA signé non encore facturé = ca_estime - factures émises (pour prospects facturés/cloturés)
+    const signeMaisNonFacture = filteredProspects
+      .filter(p => ['facture', 'cloture'].includes(p.statut))
+      .reduce((sum, p) => {
+        const estime = p.ca_estime || 0
+        const reel = facturesTotaux[p.id]?.total || 0
+        return sum + Math.max(0, estime - reel)
+      }, 0)
 
     const enCours = filteredProspects
       .filter(p => p.statut === 'mission_en_cours')
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
 
-    const previsionnel = filteredProspects
+    const pipeline = filteredProspects
       .filter(p => !['facture', 'cloture', 'mission_en_cours', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut))
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
 
@@ -81,8 +91,8 @@ export default function DashboardPage({ prospects }) {
       p => !['cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)
     ).length
 
-    return { facture, enCours, previsionnel, actifs }
-  }, [filteredProspects])
+    return { facture, signeMaisNonFacture, enCours, pipeline, actifs }
+  }, [filteredProspects, facturesTotaux])
 
   // Objectif annuel : toujours calculé sur l'année en cours, indépendamment du filtre période
   const yearStats = useMemo(() => {
@@ -90,7 +100,7 @@ export default function DashboardPage({ prospects }) {
     const yearProspects = prospects.filter(p => p.date_creation && new Date(p.date_creation) >= yearStart)
     const facture = yearProspects
       .filter(p => ['facture', 'cloture'].includes(p.statut))
-      .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
+      .reduce((sum, p) => sum + (facturesTotaux[p.id]?.total || 0), 0)
     const enCours = yearProspects
       .filter(p => p.statut === 'mission_en_cours')
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
@@ -98,7 +108,7 @@ export default function DashboardPage({ prospects }) {
       .filter(p => !['facture', 'cloture', 'mission_en_cours', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut))
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
     return { facture, enCours, pipeline }
-  }, [prospects])
+  }, [prospects, facturesTotaux])
 
 
   // --- Conversion rate per stage (pipeline only, excl. prescripteur/suivi/perdu) ---
@@ -221,7 +231,7 @@ export default function DashboardPage({ prospects }) {
       if (idx === -1) return
       const ca = p.ca_estime || 0
       if (['facture', 'cloture'].includes(p.statut)) {
-        months[idx].facture += ca
+        months[idx].facture += facturesTotaux[p.id]?.total || 0
       } else if (p.statut === 'mission_en_cours') {
         months[idx].enCours += ca
       } else if (!['perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)) {
@@ -230,7 +240,7 @@ export default function DashboardPage({ prospects }) {
     })
 
     return months.map(({ date, ...rest }) => rest)
-  }, [prospects, period])
+  }, [prospects, period, facturesTotaux])
 
   // Type dossier breakdown
   const typeData = useMemo(() => {
@@ -265,18 +275,19 @@ export default function DashboardPage({ prospects }) {
     {
       label: 'CA facturé',
       value: formatCurrency(stats.facture),
+      sub: stats.signeMaisNonFacture > 0 ? `+ ${formatCurrency(stats.signeMaisNonFacture)} à facturer` : null,
       icon: TrendingUp,
       color: 'text-success',
     },
     {
-      label: 'CA en cours',
+      label: 'Missions en cours',
       value: formatCurrency(stats.enCours),
       icon: Briefcase,
       color: 'text-primary',
     },
     {
-      label: 'CA pipeline',
-      value: formatCurrency(stats.previsionnel),
+      label: 'Pipeline',
+      value: formatCurrency(stats.pipeline),
       icon: Target,
       color: 'text-warning',
     },
@@ -313,7 +324,7 @@ export default function DashboardPage({ prospects }) {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* eslint-disable-next-line no-unused-vars */}
-        {kpis.map(({ label, value, icon: Icon, color }) => (
+        {kpis.map(({ label, value, sub, icon: Icon, color }) => (
           <div
             key={label}
             className="bg-bg-card border border-border rounded-lg p-4"
@@ -323,6 +334,7 @@ export default function DashboardPage({ prospects }) {
               <span className="text-text-secondary text-sm">{label}</span>
             </div>
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
+            {sub && <p className="text-[10px] text-text-secondary mt-1">{sub}</p>}
           </div>
         ))}
       </div>

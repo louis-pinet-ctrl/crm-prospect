@@ -162,7 +162,7 @@ export default function App() {
           />
           <Route
             path="/dashboard"
-            element={<DashboardPage prospects={prospectData.prospects} />}
+            element={<DashboardPage prospects={prospectData.prospects} facturesTotaux={prospectData.facturesTotaux} />}
           />
           <Route
             path="/commentaires"

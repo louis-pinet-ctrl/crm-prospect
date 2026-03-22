@@ -245,6 +245,22 @@ export async function updateProspectAfterInteraction(prospectId, typeNote, dateI
 
 // --- Factures ---
 
+// Totaux facturés par prospect (pour le dashboard)
+export async function fetchFacturesTotaux() {
+  const { data, error } = await supabase
+    .from('factures')
+    .select('prospect_id, montant, date_facture')
+  if (error) throw error
+  // Agrège par prospect_id
+  const map = {}
+  data.forEach(f => {
+    if (!map[f.prospect_id]) map[f.prospect_id] = { total: 0, dates: [] }
+    map[f.prospect_id].total += f.montant || 0
+    if (f.date_facture) map[f.prospect_id].dates.push(f.date_facture)
+  })
+  return map
+}
+
 export async function fetchFactures(prospectId) {
   const { data, error } = await supabase
     .from('factures')
