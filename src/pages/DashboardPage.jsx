@@ -88,11 +88,19 @@ export default function DashboardPage({ prospects }) {
   }, [filteredProspects])
 
   // Objectif annuel : toujours calculé sur l'année en cours, indépendamment du filtre période
-  const yearFacture = useMemo(() => {
+  const yearStats = useMemo(() => {
     const yearStart = new Date(new Date().getFullYear(), 0, 1)
-    return prospects
-      .filter(p => ['facture', 'cloture'].includes(p.statut) && p.date_creation && new Date(p.date_creation) >= yearStart)
+    const yearProspects = prospects.filter(p => p.date_creation && new Date(p.date_creation) >= yearStart)
+    const facture = yearProspects
+      .filter(p => ['facture', 'cloture'].includes(p.statut))
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
+    const enCours = yearProspects
+      .filter(p => p.statut === 'mission_en_cours')
+      .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
+    const pipeline = yearProspects
+      .filter(p => !['facture', 'cloture', 'mission_en_cours', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut))
+      .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
+    return { facture, enCours, pipeline }
   }, [prospects])
 
 
@@ -322,44 +330,88 @@ export default function DashboardPage({ prospects }) {
         ))}
       </div>
 
-      {/* Objectifs par palier */}
-      <div className="bg-bg-card border border-border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-text-primary">
-            Objectifs annuels
-          </span>
-          <span className="text-sm text-text-secondary">
-            {formatCurrency(yearFacture)} facturé
-          </span>
-        </div>
-        <div className="space-y-3">
-          {CA_OBJECTIFS.map(obj => {
-            const pct = Math.min(100, Math.round((yearFacture / obj.amount) * 100))
-            const reached = yearFacture >= obj.amount
-            return (
-              <div key={obj.key}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-text-secondary">
-                    {obj.label} : {formatCurrency(obj.amount)}
-                  </span>
-                  <span
-                    className="text-xs font-medium"
-                    style={{ color: reached ? obj.color : '#a0a0a0' }}
-                  >
-                    {reached ? 'Atteint' : `${pct}%`}
-                  </span>
-                </div>
-                <div className="w-full h-2.5 bg-bg-main rounded-full overflow-hidden">
+      {/* Objectifs annuels — barre unique avec paliers et curseurs */}
+      {(() => {
+        const maxAmount = CA_OBJECTIFS[CA_OBJECTIFS.length - 1].amount
+        const scaleMax = maxAmount * 1.15
+        const toPercent = (v) => Math.min(100, (v / scaleMax) * 100)
+        const { facture, enCours, pipeline } = yearStats
+        const total = facture + enCours + pipeline
+
+        return (
+          <div className="bg-bg-card border border-border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium text-text-primary">
+                Objectifs annuels
+              </span>
+              <span className="text-xs text-text-secondary">
+                Total potentiel : {formatCurrency(total)}
+              </span>
+            </div>
+
+            {/* Barre de progression */}
+            <div className="relative h-6 bg-bg-main rounded-full overflow-hidden">
+              {/* Pipeline (le plus large, en fond) */}
+              <div
+                className="absolute left-0 top-0 h-full rounded-full transition-all opacity-30"
+                style={{ width: `${toPercent(facture + enCours + pipeline)}%`, backgroundColor: '#ffb84d' }}
+              />
+              {/* En cours */}
+              <div
+                className="absolute left-0 top-0 h-full rounded-full transition-all opacity-60"
+                style={{ width: `${toPercent(facture + enCours)}%`, backgroundColor: '#c4e913' }}
+              />
+              {/* Facturé */}
+              <div
+                className="absolute left-0 top-0 h-full rounded-full transition-all"
+                style={{ width: `${toPercent(facture)}%`, backgroundColor: '#4dff88' }}
+              />
+            </div>
+
+            {/* Marqueurs de paliers */}
+            <div className="relative h-5 mt-1">
+              {CA_OBJECTIFS.map(obj => {
+                const left = toPercent(obj.amount)
+                const reached = facture >= obj.amount
+                return (
                   <div
-                    className="h-full rounded-full transition-all"
-                    style={{ width: `${pct}%`, backgroundColor: obj.color }}
-                  />
-                </div>
+                    key={obj.key}
+                    className="absolute top-0 flex flex-col items-center"
+                    style={{ left: `${left}%`, transform: 'translateX(-50%)' }}
+                  >
+                    <div
+                      className="w-0.5 h-2"
+                      style={{ backgroundColor: reached ? obj.color : '#555' }}
+                    />
+                    <span
+                      className="text-[10px] whitespace-nowrap mt-0.5"
+                      style={{ color: reached ? obj.color : '#777' }}
+                    >
+                      {formatCurrency(obj.amount)}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Légende */}
+            <div className="flex flex-wrap gap-4 mt-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#4dff88' }} />
+                <span className="text-xs text-text-secondary">Facturé : {formatCurrency(facture)}</span>
               </div>
-            )
-          })}
-        </div>
-      </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm opacity-60" style={{ backgroundColor: '#c4e913' }} />
+                <span className="text-xs text-text-secondary">En cours : {formatCurrency(enCours)}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm opacity-30" style={{ backgroundColor: '#ffb84d' }} />
+                <span className="text-xs text-text-secondary">Pipeline : {formatCurrency(pipeline)}</span>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* CA Forecast next 3 months */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
