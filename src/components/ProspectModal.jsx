@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Phone } from 'lucide-react'
+import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Phone, CalendarPlus, Download } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import ProspectSummary from './ProspectSummary'
@@ -8,6 +8,7 @@ import FacturesSection from './FacturesSection'
 import { ScoreBreakdown } from './ScoreBadge'
 import { createNote, fetchNotes, updateProspectAfterInteraction } from '../lib/supabase'
 import { calculateScore } from '../lib/scoring'
+import { downloadICS, getGoogleCalUrl, getOutlookCalUrl } from '../lib/calendar'
 import { useToast } from './Toast'
 import {
   formatCurrency,
@@ -484,15 +485,44 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
 
                 {/* Relance */}
                 {prospect.date_relance && (
-                  <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
+                  <div className={`text-sm p-3 rounded-lg ${
                     isRelanceOverdue(prospect.date_relance)
                       ? 'bg-warning/10 text-warning'
                       : 'bg-bg-main text-text-secondary'
                   }`}>
-                    <span>Relance prévue :</span>
-                    <span className="font-medium">
-                      {new Date(prospect.date_relance).toLocaleDateString('fr-FR')}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span>Relance prévue :</span>
+                      <span className="font-medium">
+                        {new Date(prospect.date_relance).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <a
+                        href={getGoogleCalUrl(prospect, prospect.date_relance)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-bg-card border border-border hover:border-primary hover:text-primary transition-colors"
+                      >
+                        <CalendarPlus size={12} />
+                        Google
+                      </a>
+                      <a
+                        href={getOutlookCalUrl(prospect, prospect.date_relance)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-bg-card border border-border hover:border-primary hover:text-primary transition-colors"
+                      >
+                        <CalendarPlus size={12} />
+                        Outlook
+                      </a>
+                      <button
+                        onClick={() => downloadICS(prospect, prospect.date_relance)}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-bg-card border border-border hover:border-primary hover:text-primary transition-colors"
+                      >
+                        <Download size={12} />
+                        .ics
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

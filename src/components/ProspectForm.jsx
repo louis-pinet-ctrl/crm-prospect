@@ -272,6 +272,14 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     onSubmit(data, pendingNote)
   }
 
+  const STEPS = [
+    { key: 'contact', label: 'Contact & Dossier' },
+    { key: 'profil', label: 'Profil restaurateur' },
+    { key: 'honoraires', label: 'Honoraires' },
+    { key: 'outils', label: 'Outils & Relance' },
+  ]
+  const [step, setStep] = useState(0)
+
   const inputClass =
     'w-full bg-bg-main border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary'
   const labelClass = 'block text-text-secondary text-xs mb-1'
@@ -280,6 +288,26 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* --- Wizard steps indicator --- */}
+      <div className="flex items-center gap-1 mb-2">
+        {STEPS.map((s, i) => (
+          <button
+            key={s.key}
+            type="button"
+            onClick={() => setStep(i)}
+            className={`flex-1 text-center py-2 text-xs font-medium rounded-lg transition-colors ${
+              i === step
+                ? 'bg-primary/15 text-primary'
+                : i < step
+                  ? 'bg-success/10 text-success'
+                  : 'bg-bg-main text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {/* --- Coller un email --- */}
       {!showPasteZone ? (
         <button
@@ -327,7 +355,8 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         </div>
       )}
 
-      {/* --- Contact --- */}
+      {/* === STEP 0: Contact & Dossier === */}
+      {step === 0 && <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Nom *</label>
@@ -457,8 +486,11 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         </div>
       )}
 
-      {/* --- Profil Restaurateur --- */}
-      <div className={sectionClass}>
+      </>}
+
+      {/* === STEP 1: Profil restaurateur === */}
+      {step === 1 && <>
+      <div>
         <h4 className={sectionTitle}>Profil restaurateur</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -652,8 +684,11 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         </div>
       </div>
 
-      {/* --- Honoraires --- */}
-      <div className={sectionClass}>
+      </>}
+
+      {/* === STEP 2: Honoraires === */}
+      {step === 2 && <>
+      <div>
         <h4 className={sectionTitle}>Honoraires</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -806,8 +841,11 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         </div>
       </div>
 
-      {/* --- Outils envoyés / utilisés --- */}
-      <div className={sectionClass}>
+      </>}
+
+      {/* === STEP 3: Outils & Relance === */}
+      {step === 3 && <>
+      <div>
         <h4 className={sectionTitle}>Outils envoyés / utilisés</h4>
         <div className="flex flex-wrap gap-4 mb-3">
           <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
@@ -961,14 +999,36 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         </div>
       )}
 
+      </>}
+
+      {/* Navigation + Submit */}
       <div className="flex gap-3 pt-2 sticky bottom-0 bg-bg-card pb-2 -mb-2 border-t border-border mt-4 pt-4">
-        <button
-          type="submit"
-          disabled={submitChecking}
-          className="flex-1 bg-primary text-bg-main font-semibold py-2.5 rounded-lg hover:bg-primary-hover transition-colors text-sm disabled:opacity-50"
-        >
-          {submitChecking ? 'Vérification...' : prospect ? 'Enregistrer' : 'Créer le prospect'}
-        </button>
+        {step > 0 && (
+          <button
+            type="button"
+            onClick={() => setStep(step - 1)}
+            className="px-4 py-2.5 rounded-lg border border-border text-text-secondary hover:bg-bg-hover transition-colors text-sm"
+          >
+            Précédent
+          </button>
+        )}
+        {step < STEPS.length - 1 ? (
+          <button
+            type="button"
+            onClick={() => setStep(step + 1)}
+            className="flex-1 bg-primary text-bg-main font-semibold py-2.5 rounded-lg hover:bg-primary-hover transition-colors text-sm"
+          >
+            Suivant
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={submitChecking}
+            className="flex-1 bg-primary text-bg-main font-semibold py-2.5 rounded-lg hover:bg-primary-hover transition-colors text-sm disabled:opacity-50"
+          >
+            {submitChecking ? 'Vérification...' : prospect ? 'Enregistrer' : 'Créer le prospect'}
+          </button>
+        )}
         <button
           type="button"
           onClick={onCancel}

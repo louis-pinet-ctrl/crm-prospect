@@ -59,17 +59,41 @@ export default function App() {
     setSidebarOpen(false)
   }, [location])
 
-  // Ctrl+K / Cmd+K pour ouvrir la recherche globale
+  // Raccourcis clavier globaux
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ignorer si on est dans un input/textarea/select
+      const tag = document.activeElement?.tagName
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+
+      // Ctrl+K / Cmd+K : recherche globale (toujours actif)
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
         setShowSearch(prev => !prev)
+        return
+      }
+
+      // Les raccourcis suivants ne fonctionnent pas dans les inputs
+      if (isInput) return
+
+      // Escape : fermer la modale ouverte
+      if (e.key === 'Escape') {
+        if (showSearch) { setShowSearch(false); return }
+        if (showAddModal) { setShowAddModal(false); return }
+        if (selectedProspect) { setSelectedProspect(null); return }
+      }
+
+      // N : nouveau prospect
+      if (e.key === 'n' && !e.ctrlKey && !e.metaKey) {
+        if (!selectedProspect && !showAddModal && !showSearch) {
+          e.preventDefault()
+          setShowAddModal(true)
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [showSearch, showAddModal, selectedProspect])
 
   if (authLoading) {
     return (
