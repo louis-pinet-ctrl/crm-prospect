@@ -51,7 +51,7 @@ const tooltipStyle = {
   color: '#fff',
 }
 
-export default function DashboardPage({ prospects, facturesTotaux = {} }) {
+export default function DashboardPage({ prospects, allFactures = [] }) {
   const [period, setPeriod] = useState('year')
 
   const filteredProspects = useMemo(() => {
@@ -64,19 +64,34 @@ export default function DashboardPage({ prospects, facturesTotaux = {} }) {
     })
   }, [prospects, period])
 
-  const stats = useMemo(() => {
-    // CA facturé = somme des vraies factures émises (table factures)
-    const facture = filteredProspects
-      .filter(p => ['facture', 'cloture'].includes(p.statut))
-      .reduce((sum, p) => sum + (facturesTotaux[p.id]?.total || 0), 0)
+  // Factures filtrées par période (basé sur date_facture, pas date_creation du prospect)
+  const filteredFacturesTotal = useMemo(() => {
+    const start = period === 'all' ? new Date(2000, 0, 1) : getPeriodStart(period)
+    return allFactures
+      .filter(f => f.date_facture && new Date(f.date_facture) >= start)
+      .reduce((sum, f) => sum + (f.montant || 0), 0)
+  }, [allFactures, period])
 
-    // CA signé non encore facturé = ca_estime - factures émises (pour prospects facturés/cloturés)
-    const signeMaisNonFacture = filteredProspects
-      .filter(p => ['facture', 'cloture'].includes(p.statut))
+  // Totaux facturés par prospect (toutes dates confondues, pour calcul reste à facturer)
+  const facturesTotauxParProspect = useMemo(() => {
+    const map = {}
+    allFactures.forEach(f => {
+      map[f.prospect_id] = (map[f.prospect_id] || 0) + (f.montant || 0)
+    })
+    return map
+  }, [allFactures])
+
+  const stats = useMemo(() => {
+    // CA facturé = somme des vraies factures sur la période
+    const facture = filteredFacturesTotal
+
+    // Reste à facturer = ca_estime des dossiers actifs - ce qui a déjà été facturé
+    const resteAFacturer = filteredProspects
+      .filter(p => !['perdu_refuse', 'prescripteur', 'suivi_long_terme', 'cloture'].includes(p.statut))
       .reduce((sum, p) => {
         const estime = p.ca_estime || 0
-        const reel = facturesTotaux[p.id]?.total || 0
-        return sum + Math.max(0, estime - reel)
+        const deja = facturesTotauxParProspect[p.id] || 0
+        return sum + Math.max(0, estime - deja)
       }, 0)
 
     const enCours = filteredProspects
@@ -91,16 +106,16 @@ export default function DashboardPage({ prospects, facturesTotaux = {} }) {
       p => !['cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)
     ).length
 
-    return { facture, signeMaisNonFacture, enCours, pipeline, actifs }
-  }, [filteredProspects, facturesTotaux])
+    return { facture, resteAFacturer, enCours, pipeline, actifs }
+  }, [filteredProspects, filteredFacturesTotal, facturesTotauxParProspect])
 
-  // Objectif annuel : toujours calculé sur l'année en cours, indépendamment du filtre période
+  // Objectif annuel : toujours calculé sur l'année en cours
   const yearStats = useMemo(() => {
     const yearStart = new Date(new Date().getFullYear(), 0, 1)
+    const facture = allFactures
+      .filter(f => f.date_facture && new Date(f.date_facture) >= yearStart)
+      .reduce((sum, f) => sum + (f.montant || 0), 0)
     const yearProspects = prospects.filter(p => p.date_creation && new Date(p.date_creation) >= yearStart)
-    const facture = yearProspects
-      .filter(p => ['facture', 'cloture'].includes(p.statut))
-      .reduce((sum, p) => sum + (facturesTotaux[p.id]?.total || 0), 0)
     const enCours = yearProspects
       .filter(p => p.statut === 'mission_en_cours')
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
@@ -108,7 +123,7 @@ export default function DashboardPage({ prospects, facturesTotaux = {} }) {
       .filter(p => !['facture', 'cloture', 'mission_en_cours', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut))
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
     return { facture, enCours, pipeline }
-  }, [prospects, facturesTotaux])
+  }, [prospects, allFactures])
 
 
   // --- Conversion rate per stage (pipeline only, excl. prescripteur/suivi/perdu) ---
@@ -219,28 +234,34 @@ export default function DashboardPage({ prospects, facturesTotaux = {} }) {
       })
     }
 
+    // Factures réelles par mois (basé sur date_facture)
+    allFactures.forEach(f => {
+      if (!f.date_facture) return
+      const d = new Date(f.date_facture)
+      const idx = months.findIndex(m =>
+        d.getMonth() === m.date.getMonth() && d.getFullYear() === m.date.getFullYear()
+      )
+      if (idx !== -1) months[idx].facture += f.montant || 0
+    })
+
+    // En cours + pipeline par mois (basé sur date_creation du prospect)
     prospects.forEach(p => {
       if (!p.date_creation) return
       const created = new Date(p.date_creation)
-      const idx = months.findIndex(m => {
-        return (
-          created.getMonth() === m.date.getMonth() &&
-          created.getFullYear() === m.date.getFullYear()
-        )
-      })
+      const idx = months.findIndex(m =>
+        created.getMonth() === m.date.getMonth() && created.getFullYear() === m.date.getFullYear()
+      )
       if (idx === -1) return
       const ca = p.ca_estime || 0
-      if (['facture', 'cloture'].includes(p.statut)) {
-        months[idx].facture += facturesTotaux[p.id]?.total || 0
-      } else if (p.statut === 'mission_en_cours') {
+      if (p.statut === 'mission_en_cours') {
         months[idx].enCours += ca
-      } else if (!['perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)) {
+      } else if (!['facture', 'cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)) {
         months[idx].previsionnel += ca
       }
     })
 
     return months.map(({ date, ...rest }) => rest)
-  }, [prospects, period, facturesTotaux])
+  }, [prospects, allFactures, period])
 
   // Type dossier breakdown
   const typeData = useMemo(() => {
@@ -275,7 +296,7 @@ export default function DashboardPage({ prospects, facturesTotaux = {} }) {
     {
       label: 'CA facturé',
       value: formatCurrency(stats.facture),
-      sub: stats.signeMaisNonFacture > 0 ? `+ ${formatCurrency(stats.signeMaisNonFacture)} à facturer` : null,
+      sub: stats.resteAFacturer > 0 ? `${formatCurrency(stats.resteAFacturer)} reste à facturer` : null,
       icon: TrendingUp,
       color: 'text-success',
     },
