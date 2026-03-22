@@ -58,10 +58,12 @@ export default function DashboardPage({ prospects }) {
   const [period, setPeriod] = useState('year')
 
   const filteredProspects = useMemo(() => {
+    if (period === 'all') return prospects
     const start = getPeriodStart(period)
     return prospects.filter(p => {
-      if (!p.date_creation) return true
-      return new Date(p.date_creation) >= start
+      const d = p.date_creation ? new Date(p.date_creation) : null
+      if (!d) return false
+      return d >= start
     })
   }, [prospects, period])
 
@@ -75,7 +77,7 @@ export default function DashboardPage({ prospects }) {
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
 
     const previsionnel = filteredProspects
-      .filter(p => p.statut !== 'perdu_refuse')
+      .filter(p => !['facture', 'cloture', 'mission_en_cours', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut))
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
 
     const actifs = filteredProspects.filter(
@@ -85,19 +87,33 @@ export default function DashboardPage({ prospects }) {
     return { facture, enCours, previsionnel, actifs }
   }, [filteredProspects])
 
+  // Objectif annuel : toujours calculé sur l'année en cours, indépendamment du filtre période
+  const yearFacture = useMemo(() => {
+    const yearStart = new Date(new Date().getFullYear(), 0, 1)
+    return prospects
+      .filter(p => ['facture', 'cloture'].includes(p.statut) && p.date_creation && new Date(p.date_creation) >= yearStart)
+      .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
+  }, [prospects])
+
   const progressPercent = Math.min(
     100,
-    Math.round((stats.facture / CA_OBJECTIF) * 100)
+    Math.round((yearFacture / CA_OBJECTIF) * 100)
   )
 
-  // --- Conversion rate per stage ---
+  // --- Conversion rate per stage (pipeline only, excl. prescripteur/suivi/perdu) ---
   const conversionData = useMemo(() => {
-    const pipeline = STATUTS.filter(s => s.value !== 'perdu_refuse')
-    const counts = pipeline.map(s => ({
+    const pipelineStatuts = STATUTS.filter(
+      s => !['perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(s.value)
+    )
+    const pipelineProspects = filteredProspects.filter(
+      p => !['perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)
+    )
+
+    const counts = pipelineStatuts.map(s => ({
       ...s,
-      count: filteredProspects.filter(p => {
+      count: pipelineProspects.filter(p => {
         const pOrder = STATUTS.find(st => st.value === p.statut)?.order || 0
-        return pOrder >= s.order && p.statut !== 'perdu_refuse'
+        return pOrder >= s.order
       }).length,
     }))
 
@@ -176,11 +192,12 @@ export default function DashboardPage({ prospects }) {
     return months
   }, [filteredProspects])
 
-  // Monthly chart data
+  // Monthly chart data — always uses ALL prospects to show a meaningful timeline
   const monthlyData = useMemo(() => {
     const months = []
     const now = new Date()
-    for (let i = 11; i >= 0; i--) {
+    const monthCount = period === 'month' ? 1 : period === 'quarter' ? 3 : 12
+    for (let i = monthCount - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
       months.push({
         month: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
@@ -191,7 +208,7 @@ export default function DashboardPage({ prospects }) {
       })
     }
 
-    filteredProspects.forEach(p => {
+    prospects.forEach(p => {
       if (!p.date_creation) return
       const created = new Date(p.date_creation)
       const idx = months.findIndex(m => {
@@ -212,7 +229,7 @@ export default function DashboardPage({ prospects }) {
     })
 
     return months.map(({ date, ...rest }) => rest)
-  }, [filteredProspects])
+  }, [prospects, period])
 
   // Type dossier breakdown
   const typeData = useMemo(() => {
@@ -257,7 +274,7 @@ export default function DashboardPage({ prospects }) {
       color: 'text-primary',
     },
     {
-      label: 'CA prévisionnel',
+      label: 'CA pipeline',
       value: formatCurrency(stats.previsionnel),
       icon: Target,
       color: 'text-warning',
@@ -324,7 +341,7 @@ export default function DashboardPage({ prospects }) {
           />
         </div>
         <p className="text-xs text-text-secondary mt-1">
-          {formatCurrency(stats.facture)} facturé sur {formatCurrency(CA_OBJECTIF)}
+          {formatCurrency(yearFacture)} facturé sur {formatCurrency(CA_OBJECTIF)}
         </p>
       </div>
 
