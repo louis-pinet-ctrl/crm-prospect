@@ -38,10 +38,10 @@ export function ScoreBreakdown({ result }) {
   const display = getScoreDisplay(total)
 
   const categories = [
-    { key: 'qualification', label: 'Qualification', emoji: '' },
-    { key: 'engagement', label: 'Engagement', emoji: '' },
-    { key: 'financier', label: 'Potentiel financier', emoji: '' },
-    { key: 'signaux', label: 'Signaux positifs', emoji: '' },
+    { key: 'qualification', label: 'Qualification' },
+    { key: 'engagement', label: 'Engagement' },
+    { key: 'financier', label: 'Potentiel financier' },
+    { key: 'signaux', label: 'Signaux / Momentum' },
   ]
 
   return (

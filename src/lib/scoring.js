@@ -15,141 +15,213 @@ export function getScoreDisplay(score) {
 
 export function calculateScore(prospect, notes = []) {
   const breakdown = {
-    qualification: { score: 0, max: 25, details: [] },
-    engagement: { score: 0, max: 30, details: [] },
-    financier: { score: 0, max: 25, details: [] },
-    signaux: { score: 0, max: 20, details: [] },
+    qualification: { score: 0, max: 20, details: [] },
+    engagement: { score: 0, max: 25, details: [] },
+    financier: { score: 0, max: 30, details: [] },
+    signaux: { score: 0, max: 25, details: [] },
   }
 
-  // === QUALIFICATION (25 pts) ===
+  // === QUALIFICATION (20 pts) — Complétude de la fiche ===
+
+  // Contact (6 pts)
   if (prospect.email) {
-    breakdown.qualification.score += 5
-    breakdown.qualification.details.push('Email (+5)')
+    breakdown.qualification.score += 3
+    breakdown.qualification.details.push('Email (+3)')
   }
   if (prospect.telephone) {
-    breakdown.qualification.score += 5
-    breakdown.qualification.details.push('Téléphone (+5)')
+    breakdown.qualification.score += 3
+    breakdown.qualification.details.push('Téléphone (+3)')
   }
+
+  // Identité métier (8 pts)
   if (prospect.siret) {
-    breakdown.qualification.score += 5
-    breakdown.qualification.details.push('SIRET (+5)')
-  }
-  if (prospect.ca_annuel_declare > 0) {
-    breakdown.qualification.score += 5
-    breakdown.qualification.details.push('CA renseigné (+5)')
+    breakdown.qualification.score += 2
+    breakdown.qualification.details.push('SIRET (+2)')
   }
   if (prospect.etablissement) {
-    breakdown.qualification.score += 3
-    breakdown.qualification.details.push('Établissement (+3)')
+    breakdown.qualification.score += 2
+    breakdown.qualification.details.push('Établissement (+2)')
   }
   if (prospect.type_cuisine) {
     breakdown.qualification.score += 2
-    breakdown.qualification.details.push('Cuisine (+2)')
+    breakdown.qualification.details.push('Type cuisine (+2)')
+  }
+  if (prospect.intention) {
+    breakdown.qualification.score += 2
+    breakdown.qualification.details.push('Intention (+2)')
   }
 
-  // === ENGAGEMENT (30 pts) ===
-  // Source (0-12)
-  const sourcePoints = {
-    simulateur_precession: 12,
-    recommandation: 10,
-    diaglocal: 8,
-    site_web: 5,
-    linkedin: 3,
-    autre: 2,
+  // Profil et CA (6 pts)
+  if (prospect.profil_restaurateur) {
+    breakdown.qualification.score += 2
+    breakdown.qualification.details.push('Profil (+2)')
   }
-  const srcPts = sourcePoints[prospect.source] || 2
+  if (prospect.ca_annuel_declare > 0) {
+    breakdown.qualification.score += 4
+    breakdown.qualification.details.push('CA renseigné (+4)')
+  }
+
+  // === ENGAGEMENT (25 pts) — Intérêt et interactions ===
+
+  // Source d'acquisition (0-8)
+  const sourcePoints = {
+    simulateur_precession: 8,
+    recommandation: 7,
+    diaglocal: 6,
+    site_web: 4,
+    linkedin: 2,
+    autre: 1,
+  }
+  const srcPts = sourcePoints[prospect.source] || 1
   breakdown.engagement.score += srcPts
   breakdown.engagement.details.push(`Source ${prospect.source || 'autre'} (+${srcPts})`)
 
-  // Outils utilisés (0-10)
+  // Outils utilisés (0-7)
   if (prospect.simulateur_valorisation) {
-    breakdown.engagement.score += 5
-    breakdown.engagement.details.push('Simulateur (+5)')
+    breakdown.engagement.score += 3
+    breakdown.engagement.details.push('Simulateur (+3)')
   }
   if (prospect.diaglocal) {
-    breakdown.engagement.score += 3
-    breakdown.engagement.details.push('DiagLocal (+3)')
+    breakdown.engagement.score += 2
+    breakdown.engagement.details.push('DiagLocal (+2)')
   }
   if (prospect.guide_recu) {
     breakdown.engagement.score += 2
     breakdown.engagement.details.push('Guide (+2)')
   }
 
-  // Interactions (0-8)
+  // Interactions et récence (0-10)
   const interactions = notes.filter(n =>
     ['appel', 'email', 'whatsapp', 'rdv'].includes(n.type_note)
   )
-  if (interactions.length >= 5) {
-    breakdown.engagement.score += 8
-    breakdown.engagement.details.push(`${interactions.length} interactions (+8)`)
-  } else if (interactions.length >= 3) {
-    breakdown.engagement.score += 5
-    breakdown.engagement.details.push(`${interactions.length} interactions (+5)`)
-  } else if (interactions.length >= 1) {
-    breakdown.engagement.score += 3
-    breakdown.engagement.details.push(`${interactions.length} interaction${interactions.length > 1 ? 's' : ''} (+3)`)
+  if (interactions.length > 0) {
+    // Volume
+    const volPts = Math.min(5, Math.ceil(interactions.length / 2))
+    breakdown.engagement.score += volPts
+    breakdown.engagement.details.push(`${interactions.length} interaction${interactions.length > 1 ? 's' : ''} (+${volPts})`)
+
+    // Récence de la dernière interaction
+    const lastDate = new Date(interactions[0]?.created_at || interactions[0]?.date_creation)
+    const joursDepuis = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24))
+    if (joursDepuis <= 3) {
+      breakdown.engagement.score += 5
+      breakdown.engagement.details.push('Contact < 3j (+5)')
+    } else if (joursDepuis <= 7) {
+      breakdown.engagement.score += 4
+      breakdown.engagement.details.push('Contact < 7j (+4)')
+    } else if (joursDepuis <= 14) {
+      breakdown.engagement.score += 3
+      breakdown.engagement.details.push('Contact < 14j (+3)')
+    } else if (joursDepuis <= 30) {
+      breakdown.engagement.score += 1
+      breakdown.engagement.details.push('Contact < 30j (+1)')
+    }
   }
 
-  // === POTENTIEL FINANCIER (25 pts) ===
+  // === POTENTIEL FINANCIER (30 pts) — Valeur du dossier ===
+
+  // Montant estimé (0-18)
   const montant = prospect.base_calcul || prospect.simulateur_estimation || prospect.ca_annuel_declare || 0
-  if (montant >= 500000) {
-    breakdown.financier.score += 25
-    breakdown.financier.details.push('Montant >= 500k (+25)')
-  } else if (montant >= 300000) {
-    breakdown.financier.score += 20
-    breakdown.financier.details.push('Montant >= 300k (+20)')
-  } else if (montant >= 150000) {
+  if (montant >= 400000) {
+    breakdown.financier.score += 18
+    breakdown.financier.details.push('Montant ≥ 400k (+18)')
+  } else if (montant >= 250000) {
     breakdown.financier.score += 15
-    breakdown.financier.details.push('Montant >= 150k (+15)')
-  } else if (montant >= 50000) {
-    breakdown.financier.score += 10
-    breakdown.financier.details.push('Montant >= 50k (+10)')
+    breakdown.financier.details.push('Montant ≥ 250k (+15)')
+  } else if (montant >= 150000) {
+    breakdown.financier.score += 12
+    breakdown.financier.details.push('Montant ≥ 150k (+12)')
+  } else if (montant >= 80000) {
+    breakdown.financier.score += 9
+    breakdown.financier.details.push('Montant ≥ 80k (+9)')
+  } else if (montant >= 30000) {
+    breakdown.financier.score += 6
+    breakdown.financier.details.push('Montant ≥ 30k (+6)')
   } else if (montant > 0) {
-    breakdown.financier.score += 5
-    breakdown.financier.details.push('Montant renseigné (+5)')
+    breakdown.financier.score += 3
+    breakdown.financier.details.push('Montant renseigné (+3)')
   }
 
-  // === SIGNAUX POSITIFS (20 pts) ===
-  // Dernier résultat d'interaction (0-12)
+  // Type de dossier (0-8)
+  const typeDossierPoints = {
+    cession_fonds: 8,
+    cession_droit_bail: 6,
+    franchise: 7,
+    bail_nu: 4,
+    liquidation: 3,
+    contentieux: 5,
+    autre: 2,
+  }
+  const typePts = typeDossierPoints[prospect.type_dossier] || 0
+  if (typePts > 0) {
+    breakdown.financier.score += typePts
+    breakdown.financier.details.push(`Dossier ${prospect.type_dossier?.replace(/_/g, ' ') || '?'} (+${typePts})`)
+  }
+
+  // Franchise / multi-établissements (0-4)
+  if (prospect.est_franchise && prospect.nombre_franchises > 1) {
+    breakdown.financier.score += 4
+    breakdown.financier.details.push(`Franchise ×${prospect.nombre_franchises} (+4)`)
+  } else if (prospect.est_franchise) {
+    breakdown.financier.score += 2
+    breakdown.financier.details.push('Franchise (+2)')
+  } else if (prospect.profil_restaurateur === 'multi_etablissements') {
+    breakdown.financier.score += 3
+    breakdown.financier.details.push('Multi-établissements (+3)')
+  }
+
+  // === SIGNAUX / MOMENTUM (25 pts) — Dynamique du dossier ===
+
+  // Stade pipeline (0-10)
+  const stadePoints = {
+    mission_en_cours: 10,
+    lettre_mission_envoyee: 8,
+    diagnostic_rdv: 6,
+    relance_en_attente: 4,
+    premier_contact: 2,
+    prospect_identifie: 0,
+  }
+  const stadePts = stadePoints[prospect.statut] ?? 0
+  if (stadePts > 0) {
+    breakdown.signaux.score += stadePts
+    breakdown.signaux.details.push(`Pipeline avancé (+${stadePts})`)
+  }
+
+  // Dernier résultat d'interaction (0-8)
   if (interactions.length > 0) {
     const lastResultat = interactions[0]?.resultat
     const resultatPoints = {
-      rdv_pris: 12,
-      interesse: 10,
-      info_envoyee: 6,
-      a_rappeler: 4,
-      message_laisse: 2,
+      rdv_pris: 8,
+      interesse: 6,
+      info_envoyee: 4,
+      a_rappeler: 3,
+      message_laisse: 1,
       pas_de_reponse: 0,
       refus: -5,
     }
     const resPts = resultatPoints[lastResultat] ?? 0
     if (resPts !== 0) {
       breakdown.signaux.score += resPts
-      breakdown.signaux.details.push(`Dernier retour: ${lastResultat} (${resPts > 0 ? '+' : ''}${resPts})`)
+      breakdown.signaux.details.push(`Dernier retour: ${lastResultat?.replace(/_/g, ' ')} (${resPts > 0 ? '+' : ''}${resPts})`)
     }
   }
 
-  // Expert-comptable (0-4)
+  // Expert-comptable impliqué (0-3)
   if (prospect.a_expert_comptable) {
+    breakdown.signaux.score += 3
+    breakdown.signaux.details.push('Expert-comptable (+3)')
+  }
+
+  // Priorité manuelle (0-4)
+  if (prospect.priorite === 'haute') {
     breakdown.signaux.score += 4
-    breakdown.signaux.details.push('Expert-comptable (+4)')
+    breakdown.signaux.details.push('Priorité haute (+4)')
+  } else if (prospect.priorite === 'moyenne') {
+    breakdown.signaux.score += 2
+    breakdown.signaux.details.push('Priorité moyenne (+2)')
   }
 
-  // Stade avancé (0-4)
-  const stadePoints = {
-    lettre_mission_envoyee: 4,
-    mission_en_cours: 4,
-    diagnostic_rdv: 3,
-    relance_en_attente: 2,
-    premier_contact: 1,
-  }
-  const stadePts = stadePoints[prospect.statut] || 0
-  if (stadePts > 0) {
-    breakdown.signaux.score += stadePts
-    breakdown.signaux.details.push(`Stade avancé (+${stadePts})`)
-  }
-
-  // Malus : refus = score négatif possible, on clamp à 0
+  // Clamp signaux (le refus peut rendre négatif)
   breakdown.signaux.score = Math.max(0, breakdown.signaux.score)
 
   // Score total
