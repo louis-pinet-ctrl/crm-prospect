@@ -3,7 +3,7 @@ export const STATUTS = [
   { value: 'prospect_identifie', label: 'Prospect identifié', order: 1, tooltip: 'Prospect repéré mais pas encore contacté' },
   { value: 'premier_contact', label: 'Premier contact', order: 2, tooltip: 'Premier échange réalisé — qualifier le besoin' },
   { value: 'diagnostic_rdv', label: 'Diagnostic / RDV', order: 3, tooltip: 'RDV fixé ou diagnostic en cours pour évaluer le dossier' },
-  { value: 'relance_en_attente', label: 'Relance en attente', order: 4, tooltip: 'Deal qualifié — en attente de retour ou de relance avant envoi de la proposition' },
+  { value: 'relance_en_attente', label: 'Deal qualifié', order: 4, tooltip: 'Le besoin est confirmé et le budget identifié — il reste à envoyer la proposition' },
   { value: 'lettre_mission_envoyee', label: 'Lettre de mission envoyée', order: 5, tooltip: 'Proposition envoyée — en attente de signature du client' },
   { value: 'mission_en_cours', label: 'Mission en cours', order: 6, tooltip: 'Mission signée et travail en cours' },
   { value: 'facture', label: 'Facturé', order: 7, tooltip: 'Mission terminée et facturée' },
