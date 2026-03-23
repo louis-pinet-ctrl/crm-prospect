@@ -136,17 +136,34 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
     e.stopPropagation()
     setDragOver(false)
 
-    // 1. Fichiers glissés (.eml, .txt, .msg) — vérifier en premier
-    const files = Array.from(e.dataTransfer.files)
+    const dt = e.dataTransfer
+
+    // Debug : loguer ce que le navigateur reçoit
+    console.log('[Drop] types:', dt.types, 'files:', dt.files.length, 'items:', dt.items?.length)
+
+    // --- 1. Fichiers (e.dataTransfer.files OU items.getAsFile()) ---
+    let files = Array.from(dt.files)
+
+    // Fallback : certains navigateurs/clients mail ne remplissent que items
+    if (files.length === 0 && dt.items) {
+      for (const item of dt.items) {
+        if (item.kind === 'file') {
+          const f = item.getAsFile()
+          if (f) files.push(f)
+        }
+      }
+    }
+
     if (files.length > 0) {
+      // Accepter tout fichier texte ou sans type (clients mail desktop)
       const validFiles = files.filter(f =>
         f.name.endsWith('.eml') || f.name.endsWith('.txt') || f.name.endsWith('.msg')
         || f.type === 'text/plain' || f.type === 'message/rfc822'
-        || f.type === '' // Certains clients mail ne mettent pas de type MIME
+        || f.type === '' || f.type === 'application/octet-stream'
       )
 
       if (validFiles.length === 0) {
-        toast.error('Format non supporté. Glissez des fichiers .eml ou .txt, ou glissez le texte directement.')
+        toast.error(`Format non supporté (${files[0]?.name || files[0]?.type}). Glissez des fichiers .eml ou .txt, ou collez le texte.`)
         return
       }
 
@@ -169,12 +186,24 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
       return
     }
 
-    // 2. Texte glissé directement (drag depuis Gmail, Outlook web, etc.)
-    const droppedHtml = e.dataTransfer.getData('text/html')
-    const droppedText = e.dataTransfer.getData('text/plain')
-    const rawText = droppedHtml || droppedText || ''
+    // --- 2. Texte glissé (drag depuis Gmail, Outlook web, sélection texte) ---
+    // Préférer HTML (contient plus de structure) puis text/plain
+    const droppedHtml = dt.getData('text/html')
+    const droppedText = dt.getData('text/plain')
 
-    if (rawText.trim().length > 30) {
+    // Essayer aussi via items (lecture async) si getData est vide
+    let rawText = droppedHtml || droppedText || ''
+
+    if (!rawText && dt.items) {
+      for (const item of dt.items) {
+        if (item.kind === 'string') {
+          const text = await new Promise(resolve => item.getAsString(resolve))
+          if (text && text.length > rawText.length) rawText = text
+        }
+      }
+    }
+
+    if (rawText.trim().length > 10) {
       let cleanText = rawText
       if (cleanText.includes('<') && cleanText.includes('>')) {
         cleanText = cleanText
@@ -194,7 +223,8 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
       return
     }
 
-    toast.error('Aucun contenu détecté. Essayez de copier-coller le texte directement.')
+    console.warn('[Drop] Rien détecté. types:', [...dt.types], 'text:', droppedText?.slice(0, 100), 'html:', droppedHtml?.slice(0, 100))
+    toast.error('Aucun contenu détecté. Essayez de copier-coller le texte de l\'email directement dans la zone de texte.')
   }, [parseAndSetLeads, toast])
 
   // Vérifier les doublons
