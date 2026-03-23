@@ -109,44 +109,61 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
       }
 
       try {
-        // Construire les données prospect
+        // Construire les données prospect — n'envoyer que les champs non-null
+        // pour éviter les erreurs enum Supabase
         const prospectData = {
           nom: lead.nom || 'Lead simulateur',
-          telephone: lead.telephone || null,
-          email: lead.email || null,
           type_dossier: lead.type_dossier || 'cession_fonds',
           statut: lead.statut || 'lead_simulateur',
           priorite: lead.priorite || 'moyenne',
           source: 'simulateur_precession',
-          source_detail: lead.source_detail || null,
-          intention: lead.intention || null,
-          type_cuisine: lead.type_cuisine || null,
-          ca_annuel_declare: lead.ca_annuel_declare || null,
-          loyer_mensuel: lead.loyer_mensuel || null,
-          nombre_salaries: lead.nombre_salaries || null,
           simulateur_valorisation: true,
-          simulateur_estimation: lead.simulateur_estimation || null,
           base_calcul: lead.base_calcul || 0,
           mode_honoraires: 'pourcentage',
           taux_pourcentage: 1.3,
-          date_relance: getDateRelanceParStatut(lead.statut || 'lead_simulateur') || new Date().toISOString().split('T')[0],
+          date_relance: new Date().toISOString().split('T')[0],
           profil_restaurateur: 'primo_accedant',
         }
 
-        // Prescripteur
-        if (lead.type_prescripteur) {
-          prospectData.type_prescripteur = lead.type_prescripteur
-        }
+        // Champs optionnels — n'ajouter que si non-vides
+        if (lead.telephone) prospectData.telephone = lead.telephone
+        if (lead.email) prospectData.email = lead.email
+        if (lead.source_detail) prospectData.source_detail = lead.source_detail
+        if (lead.intention) prospectData.intention = lead.intention
+        if (lead.type_cuisine) prospectData.type_cuisine = lead.type_cuisine
+        if (lead.ca_annuel_declare) prospectData.ca_annuel_declare = lead.ca_annuel_declare
+        if (lead.loyer_mensuel) prospectData.loyer_mensuel = lead.loyer_mensuel
+        if (lead.nombre_salaries) prospectData.nombre_salaries = lead.nombre_salaries
+        if (lead.simulateur_estimation) prospectData.simulateur_estimation = lead.simulateur_estimation
+        if (lead.type_prescripteur) prospectData.type_prescripteur = lead.type_prescripteur
 
-        const created = await createProspect(prospectData)
+        // Essayer avec le statut demandé, fallback sur prospect_identifie
+        // si lead_simulateur n'existe pas encore dans l'enum Supabase
+        let created
+        try {
+          created = await createProspect(prospectData)
+        } catch (insertErr) {
+          if (insertErr.message?.includes('lead_simulateur') || insertErr.code === '22P02') {
+            console.warn('Statut lead_simulateur non disponible, fallback sur prospect_identifie')
+            prospectData.statut = 'prospect_identifie'
+            prospectData.date_relance = new Date().toISOString().split('T')[0]
+            created = await createProspect(prospectData)
+          } else {
+            throw insertErr
+          }
+        }
 
         // Créer la note avec les données bail + juridique
         if (lead._note_contenu && created?.id) {
-          await createNote({
-            prospect_id: created.id,
-            contenu: lead._note_contenu,
-            type_note: 'note_libre',
-          })
+          try {
+            await createNote({
+              prospect_id: created.id,
+              contenu: lead._note_contenu,
+              type_note: 'note_libre',
+            })
+          } catch (noteErr) {
+            console.error('Erreur création note simulateur:', noteErr)
+          }
         }
 
         imported++
@@ -163,7 +180,13 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
       setParsedLeads([])
       if (reload) reload()
     }
-    toast.success(`${imported} lead${imported > 1 ? 's' : ''} importé${imported > 1 ? 's' : ''}${skipped ? `, ${skipped} doublon${skipped > 1 ? 's' : ''} ignoré${skipped > 1 ? 's' : ''}` : ''}`)
+    if (imported > 0) {
+      toast.success(`${imported} lead${imported > 1 ? 's' : ''} importé${imported > 1 ? 's' : ''}${skipped ? `, ${skipped} doublon${skipped > 1 ? 's' : ''} ignoré${skipped > 1 ? 's' : ''}` : ''}`)
+    } else if (errors.length > 0) {
+      toast.error(`Erreur d'import : vérifiez que la migration SQL a été exécutée (lead_simulateur, prescripteur, suivi_long_terme)`)
+    } else if (skipped > 0) {
+      toast.error(`${skipped} doublon${skipped > 1 ? 's' : ''} — tous les leads existent déjà`)
+    }
   }
 
   const removeParsedLead = (index) => {

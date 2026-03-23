@@ -21,6 +21,7 @@ CREATE TYPE profil_restaurateur_enum AS ENUM (
 );
 
 CREATE TYPE statut_enum AS ENUM (
+  'lead_simulateur',
   'prospect_identifie',
   'premier_contact',
   'diagnostic_rdv',
@@ -29,7 +30,9 @@ CREATE TYPE statut_enum AS ENUM (
   'mission_en_cours',
   'facture',
   'cloture',
-  'perdu_refuse'
+  'perdu_refuse',
+  'prescripteur',
+  'suivi_long_terme'
 );
 
 CREATE TYPE priorite_enum AS ENUM (
@@ -37,7 +40,7 @@ CREATE TYPE priorite_enum AS ENUM (
 );
 
 CREATE TYPE type_note_enum AS ENUM (
-  'appel', 'email', 'rdv', 'courrier', 'note_libre'
+  'appel', 'email', 'whatsapp', 'rdv', 'courrier', 'note_libre'
 );
 
 -- 2. Table prospects
