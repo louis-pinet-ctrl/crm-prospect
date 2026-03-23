@@ -248,7 +248,11 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     if (!data.type_dossier_detail) data.type_dossier_detail = null
     if (!data.honoraires_commentaire) data.honoraires_commentaire = null
     if (!data.enseigne_franchise) data.enseigne_franchise = null
-    if (!data.simulateur_date) data.simulateur_date = null
+    if (!data.simulateur_date && data.statut === 'lead_simulateur') {
+      data.simulateur_date = new Date().toISOString().split('T')[0]
+    } else if (!data.simulateur_date) {
+      data.simulateur_date = null
+    }
     if (!data.diaglocal_adresse) data.diaglocal_adresse = null
     if (!data.diaglocal_notes) data.diaglocal_notes = null
     if (!data.siret) data.siret = null

@@ -164,6 +164,10 @@ function parseSimulateurLead(text) {
     }
     result._date_simulation_raw = raw
   }
+  // Fallback : si pas de date trouvée dans l'email, utiliser la date du jour
+  if (!result.simulateur_date) {
+    result.simulateur_date = new Date().toISOString().split('T')[0]
+  }
 
   // Construire le source_detail avec toutes les infos complémentaires
   const details = []
