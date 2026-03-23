@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   ClipboardPaste, Plus, CheckCircle2, AlertCircle, Phone, Mail, MessageCircle,
-  ArrowRight, ChevronRight, Trash2, Calculator, X, Upload,
+  ArrowRight, ChevronRight, Trash2, Calculator, X, Upload, FileText,
 } from 'lucide-react'
 import { parseEmailText } from '../lib/emailParser'
 import { createProspect, createNote, checkDuplicate } from '../lib/supabase'
@@ -30,12 +30,45 @@ function getTypeProfile(typeUtilisateur) {
   return TYPE_PROFILES[key] || TYPE_PROFILES['restaurateur']
 }
 
+// Extraire le texte d'un fichier .eml (strip headers, garder le body)
+function parseEmlContent(emlText) {
+  // Séparer headers et body (séparés par une ligne vide)
+  const parts = emlText.split(/\r?\n\r?\n/)
+  if (parts.length < 2) return emlText
+
+  // Le body commence après les headers
+  const body = parts.slice(1).join('\n\n')
+
+  // Décoder les quoted-printable basiques (=XX, =\n soft line breaks)
+  let decoded = body
+    .replace(/=\r?\n/g, '') // soft line breaks
+    .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+
+  // Strip HTML tags si présent
+  if (decoded.includes('<html') || decoded.includes('<div') || decoded.includes('<p')) {
+    decoded = decoded
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/tr>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
+  }
+
+  return decoded.trim()
+}
+
 export default function LeadsPage({ prospects, onSelectProspect, reload }) {
   const toast = useToast()
   const [pasteText, setPasteText] = useState('')
-  const [parsedLeads, setParsedLeads] = useState([]) // leads parsés en attente d'import
+  const [parsedLeads, setParsedLeads] = useState([])
   const [importing, setImporting] = useState(false)
   const [importResults, setImportResults] = useState(null)
+  const [dragOver, setDragOver] = useState(false)
 
   // Leads simulateur existants dans le CRM
   const existingLeads = useMemo(() =>
@@ -45,19 +78,15 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
     [prospects]
   )
 
-  // Parser les emails collés (peut contenir plusieurs emails séparés par "NOUVEAU LEAD")
-  const handleParse = () => {
-    if (!pasteText.trim()) return
+  // Parser un texte brut en leads
+  const parseAndSetLeads = useCallback((text) => {
+    if (!text.trim()) return
 
-    // Découper en blocs si plusieurs emails collés
-    const blocks = pasteText
+    const blocks = text
       .split(/(?=NOUVEAU LEAD VALORISATION)/)
       .filter(b => b.trim().length > 50)
 
-    if (blocks.length === 0) {
-      // Essayer comme un seul email
-      blocks.push(pasteText)
-    }
+    if (blocks.length === 0) blocks.push(text)
 
     const leads = blocks.map(block => {
       const parsed = parseEmailText(block)
@@ -71,13 +100,88 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
     }).filter(l => l.nom || l.email || l.telephone)
 
     if (leads.length === 0) {
-      toast.error('Aucun lead détecté dans le texte collé')
+      toast.error('Aucun lead détecté')
       return
     }
 
-    setParsedLeads(leads)
+    setParsedLeads(prev => [...prev, ...leads])
     toast.success(`${leads.length} lead${leads.length > 1 ? 's' : ''} détecté${leads.length > 1 ? 's' : ''}`)
+  }, [toast])
+
+  // Parser les emails collés
+  const handleParse = () => {
+    parseAndSetLeads(pasteText)
   }
+
+  // --- Drag & Drop ---
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback(async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(false)
+
+    // 1. Texte glissé directement (drag depuis Gmail, Outlook web, etc.)
+    const droppedText = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/html')
+    if (droppedText && droppedText.trim().length > 30) {
+      // Strip HTML si c'est du HTML
+      let cleanText = droppedText
+      if (cleanText.includes('<') && cleanText.includes('>')) {
+        cleanText = cleanText
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<\/p>/gi, '\n')
+          .replace(/<\/div>/gi, '\n')
+          .replace(/<[^>]+>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+      }
+      setPasteText(prev => prev ? prev + '\n\n' + cleanText : cleanText)
+      parseAndSetLeads(cleanText)
+      return
+    }
+
+    // 2. Fichiers glissés (.eml, .txt, .msg)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length === 0) return
+
+    const validFiles = files.filter(f =>
+      f.name.endsWith('.eml') || f.name.endsWith('.txt') || f.type === 'text/plain' || f.type === 'message/rfc822'
+    )
+
+    if (validFiles.length === 0) {
+      toast.error('Format non supporté. Glissez des fichiers .eml ou .txt, ou glissez le texte directement.')
+      return
+    }
+
+    let allText = ''
+    for (const file of validFiles) {
+      try {
+        const text = await file.text()
+        const content = file.name.endsWith('.eml') ? parseEmlContent(text) : text
+        allText += (allText ? '\n\n' : '') + content
+      } catch (err) {
+        console.error('Erreur lecture fichier:', file.name, err)
+        toast.error(`Erreur lecture : ${file.name}`)
+      }
+    }
+
+    if (allText) {
+      setPasteText(prev => prev ? prev + '\n\n' + allText : allText)
+      parseAndSetLeads(allText)
+    }
+  }, [parseAndSetLeads, toast])
 
   // Vérifier les doublons
   const checkDuplicates = async (leads) => {
@@ -110,7 +214,6 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
 
       try {
         // Construire les données prospect — n'envoyer que les champs non-null
-        // pour éviter les erreurs enum Supabase
         const prospectData = {
           nom: lead.nom || 'Lead simulateur',
           type_dossier: lead.type_dossier || 'cession_fonds',
@@ -137,16 +240,18 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
         if (lead.simulateur_estimation) prospectData.simulateur_estimation = lead.simulateur_estimation
         if (lead.type_prescripteur) prospectData.type_prescripteur = lead.type_prescripteur
 
-        // Essayer avec le statut demandé, fallback sur prospect_identifie
-        // si lead_simulateur n'existe pas encore dans l'enum Supabase
+        // Essayer l'insert, fallback si enum manquant en base
         let created
         try {
           created = await createProspect(prospectData)
         } catch (insertErr) {
-          if (insertErr.message?.includes('lead_simulateur') || insertErr.code === '22P02') {
-            console.warn('Statut lead_simulateur non disponible, fallback sur prospect_identifie')
+          // Erreur enum Supabase (22P02 = invalid input value for enum)
+          if (insertErr.code === '22P02') {
+            console.warn(`Statut "${prospectData.statut}" non disponible en base, fallback sur prospect_identifie`)
             prospectData.statut = 'prospect_identifie'
-            prospectData.date_relance = new Date().toISOString().split('T')[0]
+            // Retirer type_prescripteur si l'enum n'existe pas non plus
+            delete prospectData.type_prescripteur
+            delete prospectData.intention
             created = await createProspect(prospectData)
           } else {
             throw insertErr
@@ -168,8 +273,8 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
 
         imported++
       } catch (err) {
-        console.error('Erreur import lead:', err)
-        errors.push(lead.nom || lead.email)
+        console.error('Erreur import lead:', lead.nom, err)
+        errors.push(`${lead.nom || lead.email} (${err.message || err.code || 'erreur inconnue'})`)
       }
     }
 
@@ -183,7 +288,7 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
     if (imported > 0) {
       toast.success(`${imported} lead${imported > 1 ? 's' : ''} importé${imported > 1 ? 's' : ''}${skipped ? `, ${skipped} doublon${skipped > 1 ? 's' : ''} ignoré${skipped > 1 ? 's' : ''}` : ''}`)
     } else if (errors.length > 0) {
-      toast.error(`Erreur d'import : vérifiez que la migration SQL a été exécutée (lead_simulateur, prescripteur, suivi_long_terme)`)
+      toast.error(`Erreur : ${errors[0]}`)
     } else if (skipped > 0) {
       toast.error(`${skipped} doublon${skipped > 1 ? 's' : ''} — tous les leads existent déjà`)
     }
@@ -197,43 +302,73 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
     <div className="p-6 max-w-4xl">
       <h2 className="text-lg font-semibold text-text-primary mb-1">Import leads simulateur</h2>
       <p className="text-xs text-text-secondary mb-6">
-        Collez un ou plusieurs emails de résultat du simulateur de valorisation. Le parser détecte automatiquement les données.
+        Glissez un email ou un fichier .eml, ou collez le texte directement.
       </p>
 
-      {/* Zone de paste */}
-      <div className="bg-bg-card border border-border rounded-lg p-4 mb-6">
+      {/* Zone drag & drop + paste */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`bg-bg-card border-2 border-dashed rounded-lg p-4 mb-6 transition-all ${
+          dragOver
+            ? 'border-primary bg-primary/5 scale-[1.01]'
+            : 'border-border hover:border-text-secondary/30'
+        }`}
+      >
+        {/* Header avec icônes */}
         <div className="flex items-center gap-2 mb-3">
           <ClipboardPaste size={16} className="text-primary" />
-          <span className="text-sm font-medium text-text-primary">Coller les emails</span>
-          <span className="text-[10px] text-text-secondary ml-auto">Supporte le multi-paste (plusieurs emails)</span>
+          <span className="text-sm font-medium text-text-primary">Glisser ou coller les emails</span>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <span className="text-[10px] text-text-secondary px-2 py-0.5 bg-bg-main rounded border border-border">
+              .eml
+            </span>
+            <span className="text-[10px] text-text-secondary px-2 py-0.5 bg-bg-main rounded border border-border">
+              .txt
+            </span>
+            <span className="text-[10px] text-text-secondary px-2 py-0.5 bg-bg-main rounded border border-border">
+              drag text
+            </span>
+          </div>
         </div>
 
-        <textarea
-          value={pasteText}
-          onChange={(e) => setPasteText(e.target.value)}
-          placeholder="Collez ici un ou plusieurs emails EmailJS du simulateur de valorisation..."
-          rows={8}
-          className="w-full bg-bg-main border border-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary resize-none font-mono leading-relaxed"
-        />
+        {/* Zone visuelle drag */}
+        {dragOver ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <FileText size={32} className="text-primary animate-bounce" />
+            <span className="text-sm text-primary font-medium">Lâchez pour importer</span>
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              placeholder="Collez ici un ou plusieurs emails du simulateur de valorisation, ou glissez un fichier .eml / du texte depuis votre boîte mail..."
+              rows={8}
+              className="w-full bg-bg-main border border-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary resize-none font-mono leading-relaxed"
+            />
 
-        <div className="flex items-center gap-2 mt-3">
-          <button
-            onClick={handleParse}
-            disabled={!pasteText.trim()}
-            className="flex items-center gap-2 bg-primary text-bg-main font-medium px-4 py-2 rounded-lg text-sm hover:bg-primary-hover transition-colors disabled:opacity-50"
-          >
-            <Upload size={14} />
-            Détecter les leads
-          </button>
-          {pasteText && (
-            <button
-              onClick={() => { setPasteText(''); setParsedLeads([]) }}
-              className="text-xs text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Effacer
-            </button>
-          )}
-        </div>
+            <div className="flex items-center gap-2 mt-3">
+              <button
+                onClick={handleParse}
+                disabled={!pasteText.trim()}
+                className="flex items-center gap-2 bg-primary text-bg-main font-medium px-4 py-2 rounded-lg text-sm hover:bg-primary-hover transition-colors disabled:opacity-50"
+              >
+                <Upload size={14} />
+                Détecter les leads
+              </button>
+              {pasteText && (
+                <button
+                  onClick={() => { setPasteText(''); setParsedLeads([]) }}
+                  className="text-xs text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  Effacer
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Preview des leads parsés */}
@@ -262,16 +397,34 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
 
       {/* Résultats d'import */}
       {importResults && (
-        <div className="bg-success/5 border border-success/20 rounded-lg p-4 mb-6">
+        <div className={`border rounded-lg p-4 mb-6 ${
+          importResults.errors.length > 0
+            ? 'bg-danger/5 border-danger/20'
+            : 'bg-success/5 border-success/20'
+        }`}>
           <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 size={16} className="text-success" />
-            <span className="text-sm font-medium text-success">Import terminé</span>
+            {importResults.errors.length > 0 ? (
+              <AlertCircle size={16} className="text-danger" />
+            ) : (
+              <CheckCircle2 size={16} className="text-success" />
+            )}
+            <span className={`text-sm font-medium ${importResults.errors.length > 0 ? 'text-danger' : 'text-success'}`}>
+              Import terminé
+            </span>
           </div>
           <p className="text-xs text-text-secondary">
             {importResults.imported} importé{importResults.imported > 1 ? 's' : ''}
             {importResults.skipped > 0 && ` · ${importResults.skipped} doublon${importResults.skipped > 1 ? 's' : ''}`}
             {importResults.errors.length > 0 && ` · ${importResults.errors.length} erreur${importResults.errors.length > 1 ? 's' : ''}`}
           </p>
+          {importResults.errors.length > 0 && (
+            <div className="mt-2 text-[11px] text-danger/80 space-y-0.5">
+              {importResults.errors.map((e, i) => <div key={i}>{e}</div>)}
+              <div className="mt-1 text-text-secondary">
+                Avez-vous exécuté la migration SQL ? (supabase-migration-lead-simulateur.sql)
+              </div>
+            </div>
+          )}
         </div>
       )}
 
