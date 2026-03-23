@@ -1,16 +1,16 @@
 export const STATUTS = [
-  { value: 'lead_simulateur', label: 'Lead simulateur', order: 0 },
-  { value: 'prospect_identifie', label: 'Prospect identifié', order: 1 },
-  { value: 'premier_contact', label: 'Premier contact', order: 2 },
-  { value: 'diagnostic_rdv', label: 'Diagnostic / RDV', order: 3 },
-  { value: 'relance_en_attente', label: 'Relance en attente', order: 4 },
-  { value: 'lettre_mission_envoyee', label: 'Lettre de mission envoyée', order: 5 },
-  { value: 'mission_en_cours', label: 'Mission en cours', order: 6 },
-  { value: 'facture', label: 'Facturé', order: 7 },
-  { value: 'cloture', label: 'Clôturé', order: 8 },
-  { value: 'perdu_refuse', label: 'Perdu / Refusé', order: 9 },
-  { value: 'prescripteur', label: 'Prescripteur', order: 10 },
-  { value: 'suivi_long_terme', label: 'Suivi long terme', order: 11 },
+  { value: 'lead_simulateur', label: 'Lead simulateur', order: 0, tooltip: 'Nouveau lead entrant via le simulateur — à contacter rapidement' },
+  { value: 'prospect_identifie', label: 'Prospect identifié', order: 1, tooltip: 'Prospect repéré mais pas encore contacté' },
+  { value: 'premier_contact', label: 'Premier contact', order: 2, tooltip: 'Premier échange réalisé — qualifier le besoin' },
+  { value: 'diagnostic_rdv', label: 'Diagnostic / RDV', order: 3, tooltip: 'RDV fixé ou diagnostic en cours pour évaluer le dossier' },
+  { value: 'relance_en_attente', label: 'Relance en attente', order: 4, tooltip: 'Deal qualifié — en attente de retour ou de relance avant envoi de la proposition' },
+  { value: 'lettre_mission_envoyee', label: 'Lettre de mission envoyée', order: 5, tooltip: 'Proposition envoyée — en attente de signature du client' },
+  { value: 'mission_en_cours', label: 'Mission en cours', order: 6, tooltip: 'Mission signée et travail en cours' },
+  { value: 'facture', label: 'Facturé', order: 7, tooltip: 'Mission terminée et facturée' },
+  { value: 'cloture', label: 'Clôturé', order: 8, tooltip: 'Dossier terminé — rien à relancer pour le moment' },
+  { value: 'perdu_refuse', label: 'Perdu / Refusé', order: 9, tooltip: 'Le prospect a décliné ou ne donne plus suite' },
+  { value: 'prescripteur', label: 'Prescripteur', order: 10, tooltip: 'Contact qui recommande vos services — à entretenir régulièrement' },
+  { value: 'suivi_long_terme', label: 'Suivi long terme', order: 11, tooltip: 'Pas de besoin immédiat — garder le contact pour plus tard' },
 ]
 
 export const TUNNELS = [

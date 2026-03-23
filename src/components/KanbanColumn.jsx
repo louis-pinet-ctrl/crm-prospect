@@ -11,7 +11,7 @@ export default function KanbanColumn({ statut, prospects, onSelectProspect }) {
   return (
     <div className="flex-shrink-0 w-72">
       <div className="flex items-center justify-between mb-3 px-1">
-        <h3 className="text-sm font-medium text-text-secondary">
+        <h3 className="text-sm font-medium text-text-secondary cursor-default" title={statut.tooltip}>
           {statut.label}
         </h3>
         <span className="text-xs text-text-secondary bg-bg-main px-2 py-0.5 rounded-full">
