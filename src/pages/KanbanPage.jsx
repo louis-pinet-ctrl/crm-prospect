@@ -8,7 +8,7 @@ import {
   pointerWithin,
   rectIntersection,
 } from '@dnd-kit/core'
-import { Plus, Search, Filter, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Search, Filter, ChevronDown, ChevronRight, ChevronsUpDown } from 'lucide-react'
 import KanbanColumn from '../components/KanbanColumn'
 import KanbanCard from '../components/KanbanCard'
 import RelancesWidget from '../components/RelancesWidget'
@@ -31,6 +31,7 @@ export default function KanbanPage({
   const [showFilters, setShowFilters] = useState(false)
   const [activeId, setActiveId] = useState(null)
   const [collapsedTunnels, setCollapsedTunnels] = useState({})
+  const [collapsedColumns, setCollapsedColumns] = useState({})
   const [filterClientExistant, setFilterClientExistant] = useState(false)
   const toast = useToast()
 
@@ -129,6 +130,22 @@ export default function KanbanPage({
     setCollapsedTunnels(prev => ({ ...prev, [tunnelId]: !prev[tunnelId] }))
   }
 
+  const toggleColumn = (statutValue) => {
+    setCollapsedColumns(prev => ({ ...prev, [statutValue]: !prev[statutValue] }))
+  }
+
+  const allColumnsCollapsed = STATUTS.every(s => collapsedColumns[s.value])
+
+  const toggleAllColumns = () => {
+    if (allColumnsCollapsed) {
+      setCollapsedColumns({})
+    } else {
+      const all = {}
+      STATUTS.forEach(s => { all[s.value] = true })
+      setCollapsedColumns(all)
+    }
+  }
+
   const getTunnelCount = (tunnel) => {
     return tunnel.statuts.reduce((sum, s) => sum + (columnMap[s]?.length || 0), 0)
   }
@@ -157,6 +174,14 @@ export default function KanbanPage({
             className="bg-bg-main border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary w-48"
           />
         </div>
+
+        <button
+          onClick={toggleAllColumns}
+          className="p-2 rounded-lg border border-border text-text-secondary hover:text-text-primary transition-colors"
+          title={allColumnsCollapsed ? 'Déplier toutes les colonnes' : 'Replier toutes les colonnes'}
+        >
+          <ChevronsUpDown size={18} />
+        </button>
 
         <button
           onClick={() => setShowFilters(!showFilters)}
@@ -291,6 +316,8 @@ export default function KanbanPage({
                             statut={statut}
                             prospects={columnMap[statut.value] || []}
                             onSelectProspect={onSelectProspect}
+                            collapsed={!!collapsedColumns[statut.value]}
+                            onToggleCollapse={() => toggleColumn(statut.value)}
                           />
                         ))}
                       </div>
