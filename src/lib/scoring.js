@@ -179,6 +179,7 @@ export function calculateScore(prospect, notes = []) {
     diagnostic_rdv: 6,
     relance_en_attente: 4,
     premier_contact: 2,
+    lead_simulateur: 0,
     prospect_identifie: 0,
   }
   const stadePts = stadePoints[prospect.statut] ?? 0

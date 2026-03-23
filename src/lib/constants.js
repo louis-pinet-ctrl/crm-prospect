@@ -1,4 +1,5 @@
 export const STATUTS = [
+  { value: 'lead_simulateur', label: 'Lead simulateur', order: 0 },
   { value: 'prospect_identifie', label: 'Prospect identifié', order: 1 },
   { value: 'premier_contact', label: 'Premier contact', order: 2 },
   { value: 'diagnostic_rdv', label: 'Diagnostic / RDV', order: 3 },
@@ -18,7 +19,7 @@ export const TUNNELS = [
     label: 'Prospection',
     description: 'Premiers échanges avec le prospect',
     color: '#3b82f6',
-    statuts: ['prospect_identifie', 'premier_contact', 'diagnostic_rdv'],
+    statuts: ['lead_simulateur', 'prospect_identifie', 'premier_contact', 'diagnostic_rdv'],
   },
   {
     id: 'closing',
@@ -52,6 +53,7 @@ export const DELAI_RELANCE_SUIVI_JOURS = 90
 
 // Délais de relance automatique par statut (en jours)
 export const DELAIS_RELANCE_PAR_STATUT = {
+  lead_simulateur: 0,         // Contacter immédiatement (sous 2h idéalement)
   prospect_identifie: 3,      // Relancer rapidement un prospect froid
   premier_contact: 7,         // Laisser le temps de réfléchir
   diagnostic_rdv: 5,          // Suivi post-RDV assez rapide
@@ -188,6 +190,7 @@ export const TYPES_CUISINE = [
 ]
 
 export const STAGE_PROBABILITY = {
+  lead_simulateur: 0.03,
   prospect_identifie: 0.05,
   premier_contact: 0.15,
   diagnostic_rdv: 0.30,

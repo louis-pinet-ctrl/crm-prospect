@@ -81,6 +81,8 @@ function buildSubject(p) {
   const intensity = getRelanceIntensity(p)
 
   switch (p.statut) {
+    case 'lead_simulateur':
+      return `${p.nom} — Votre estimation de valorisation`
     case 'prospect_identifie':
       return `${p.nom} — Accompagnement juridique pour votre restaurant`
     case 'premier_contact':
@@ -116,6 +118,36 @@ function buildEmailBody(p) {
   lines.push('')
 
   switch (p.statut) {
+    case 'lead_simulateur':
+      lines.push(
+        `Je suis l'avocat spécialisé en restauration derrière le simulateur de valorisation que vous avez utilisé.`
+      )
+      lines.push('')
+      if (p.simulateur_estimation) {
+        lines.push(
+          `J'ai bien reçu les résultats de votre simulation` +
+          ` (estimation médiane autour de ${formatAmount(p.simulateur_estimation)}).` +
+          ` C'est une première étape importante pour bien préparer ${context}.`
+        )
+      } else {
+        lines.push(
+          `J'ai vu que vous aviez utilisé notre outil de valorisation pour estimer la valeur de votre fonds de commerce.`
+        )
+      }
+      lines.push('')
+      lines.push(
+        `Ce simulateur donne un ordre de grandeur, mais chaque situation est unique. ` +
+        `Le bail, l'emplacement, la licence, la conformité ERP… autant de facteurs qui impactent ` +
+        `significativement la valorisation et la négociation.`
+      )
+      lines.push('')
+      lines.push(
+        `Seriez-vous disponible pour un échange téléphonique de 10 minutes ? ` +
+        `Je pourrais affiner l'estimation au regard de votre situation réelle et vous donner ` +
+        `les premiers points de vigilance juridiques. C'est sans engagement bien sûr.`
+      )
+      break
+
     case 'prospect_identifie':
       lines.push(
         `Je me permets de vous contacter car je suis avocat spécialisé dans l'accompagnement des restaurateurs.`
@@ -344,6 +376,21 @@ function buildWhatsApp(p) {
   const daysSince = getDaysSinceLastInteraction(p)
 
   switch (p.statut) {
+    case 'lead_simulateur':
+      if (p.simulateur_estimation) {
+        return (
+          `Bonjour ${prenom}, je suis l'avocat derrière le simulateur de valorisation que vous avez utilisé. ` +
+          `J'ai vu votre estimation à ~${formatAmount(p.simulateur_estimation)}. ` +
+          `Chaque situation est différente — seriez-vous dispo pour un appel de 10 min ? ` +
+          `Je pourrais affiner l'estimation et vous signaler les points juridiques à anticiper. Sans engagement.`
+        )
+      }
+      return (
+        `Bonjour ${prenom}, je suis l'avocat derrière le simulateur de valorisation que vous avez utilisé. ` +
+        `Seriez-vous disponible pour un court échange ? ` +
+        `Je pourrais affiner votre estimation et vous donner un premier éclairage juridique. Sans engagement.`
+      )
+
     case 'prospect_identifie':
       if (p.simulateur_valorisation) {
         return (
