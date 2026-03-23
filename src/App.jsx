@@ -11,6 +11,7 @@ import {
   X,
   Search,
   CalendarDays,
+  Sun,
 } from 'lucide-react'
 import { useProspects } from './hooks/useProspects'
 import { onAuthStateChange, signOut, getSession, supabase } from './lib/supabase'
@@ -21,6 +22,7 @@ import ListPage from './pages/ListPage'
 import LoginPage from './pages/LoginPage'
 import CommentairesPage from './pages/CommentairesPage'
 import AgendaPage from './pages/AgendaPage'
+import MaJourneePage from './pages/MaJourneePage'
 import ProspectModal from './components/ProspectModal'
 import GlobalSearch from './components/GlobalSearch'
 import { useToast } from './components/Toast'
@@ -112,6 +114,7 @@ export default function App() {
   ).length
 
   const navItems = [
+    { to: '/journee', icon: Sun, label: 'Ma journée' },
     { to: '/', icon: Kanban, label: 'Kanban' },
     { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
     { to: '/agenda', icon: CalendarDays, label: 'Agenda' },
@@ -204,6 +207,16 @@ export default function App() {
       {/* Main content */}
       <main className="flex-1 md:pt-0 pt-14 min-w-0">
         <Routes>
+          <Route
+            path="/journee"
+            element={
+              <MaJourneePage
+                prospects={prospectData.prospects}
+                onSelectProspect={setSelectedProspect}
+                reload={prospectData.reload}
+              />
+            }
+          />
           <Route
             path="/"
             element={

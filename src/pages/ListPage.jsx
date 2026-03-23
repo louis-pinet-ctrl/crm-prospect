@@ -1,8 +1,11 @@
 import { useState, useMemo } from 'react'
-import { Plus, Search, ArrowUpDown, AlertCircle } from 'lucide-react'
+import { Plus, Search, ArrowUpDown, AlertCircle, CheckSquare, Square, Mail, MessageCircle, CalendarPlus, X } from 'lucide-react'
 import RelancesWidget from '../components/RelancesWidget'
 import { ScoreBadge } from '../components/ScoreBadge'
 import { calculateScore } from '../lib/scoring'
+import { generateRelanceTemplates } from '../lib/relanceTemplates'
+import { createNote, updateProspectAfterInteraction, updateProspect } from '../lib/supabase'
+import { useToast } from '../components/Toast'
 import {
   STATUTS,
   TYPES_DOSSIER,
@@ -12,6 +15,7 @@ import {
   getTypeDossierLabel,
   getTypeDossierColor,
   isRelanceOverdue,
+  getDateRelanceParStatut,
 } from '../lib/constants'
 
 export default function ListPage({
@@ -21,11 +25,14 @@ export default function ListPage({
   onAddProspect,
   reload,
 }) {
+  const toast = useToast()
   const [search, setSearch] = useState('')
   const [filterStatut, setFilterStatut] = useState('')
   const [filterType, setFilterType] = useState('')
   const [sortField, setSortField] = useState('date_creation')
   const [sortDir, setSortDir] = useState('desc')
+  const [selected, setSelected] = useState(new Set())
+  const [batchSending, setBatchSending] = useState(false)
 
   const toggleSort = (field) => {
     if (sortField === field) {
@@ -68,6 +75,141 @@ export default function ListPage({
   const getLabel = (list, value) =>
     list.find(i => i.value === value)?.label || value
 
+  const toggleSelect = (id, e) => {
+    e.stopPropagation()
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === filtered.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filtered.map(p => p.id)))
+    }
+  }
+
+  const selectedProspects = filtered.filter(p => selected.has(p.id))
+
+  // Batch : envoyer email à tous les sélectionnés
+  const handleBatchEmail = async () => {
+    const withEmail = selectedProspects.filter(p => p.email && generateRelanceTemplates(p))
+    if (withEmail.length === 0) {
+      toast.error('Aucun prospect sélectionné n\'a d\'email ou de template disponible')
+      return
+    }
+
+    setBatchSending(true)
+    let sent = 0
+    for (const p of withEmail) {
+      const templates = generateRelanceTemplates(p)
+      if (!templates) continue
+      try {
+        await createNote({
+          prospect_id: p.id,
+          contenu: `Email envoyé (batch)\n---\nObjet : ${templates.email.subject}\n\n${templates.email.body}`,
+          type_note: 'email',
+          date_interaction: new Date().toISOString(),
+          resultat: 'message_laisse',
+        })
+        await updateProspectAfterInteraction(p.id, 'email', new Date().toISOString())
+        sent++
+      } catch (err) {
+        console.error(`Erreur batch email ${p.nom}:`, err)
+      }
+    }
+
+    // Ouvrir le client mail pour le premier (les autres sont logués)
+    if (withEmail.length === 1) {
+      const p = withEmail[0]
+      const t = generateRelanceTemplates(p)
+      if (t) {
+        window.location.href = `mailto:${p.email}?subject=${encodeURIComponent(t.email.subject)}&body=${encodeURIComponent(t.email.body)}`
+      }
+    }
+
+    setBatchSending(false)
+    setSelected(new Set())
+    if (reload) reload()
+    toast.success(`${sent} email${sent > 1 ? 's' : ''} logué${sent > 1 ? 's' : ''} avec template personnalisé`)
+  }
+
+  // Batch : envoyer WhatsApp à tous les sélectionnés
+  const handleBatchWhatsApp = async () => {
+    const withPhone = selectedProspects.filter(p => p.telephone && generateRelanceTemplates(p))
+    if (withPhone.length === 0) {
+      toast.error('Aucun prospect sélectionné n\'a de téléphone ou de template disponible')
+      return
+    }
+
+    setBatchSending(true)
+    let sent = 0
+    for (const p of withPhone) {
+      const templates = generateRelanceTemplates(p)
+      if (!templates) continue
+      try {
+        await createNote({
+          prospect_id: p.id,
+          contenu: `Message WhatsApp envoyé (batch)\n---\n${templates.whatsapp}`,
+          type_note: 'whatsapp',
+          date_interaction: new Date().toISOString(),
+          resultat: 'message_laisse',
+        })
+        await updateProspectAfterInteraction(p.id, 'whatsapp', new Date().toISOString())
+        sent++
+      } catch (err) {
+        console.error(`Erreur batch WhatsApp ${p.nom}:`, err)
+      }
+    }
+
+    // Ouvrir WhatsApp pour le premier
+    if (withPhone.length === 1) {
+      const p = withPhone[0]
+      const t = generateRelanceTemplates(p)
+      if (t) {
+        const digits = p.telephone.replace(/[\s./-]/g, '')
+        const num = digits.startsWith('0') && digits.length === 10
+          ? `33${digits.slice(1)}`
+          : digits.startsWith('+33') || digits.startsWith('33')
+            ? digits.replace('+', '')
+            : digits
+        window.open(`https://wa.me/${num}?text=${encodeURIComponent(t.whatsapp)}`, '_blank')
+      }
+    }
+
+    setBatchSending(false)
+    setSelected(new Set())
+    if (reload) reload()
+    toast.success(`${sent} WhatsApp logué${sent > 1 ? 's' : ''} avec template personnalisé`)
+  }
+
+  // Batch : planifier relance
+  const handleBatchPlanRelance = async () => {
+    setBatchSending(true)
+    let planned = 0
+    for (const p of selectedProspects) {
+      const dateRelance = getDateRelanceParStatut(p.statut) || (() => {
+        const d = new Date()
+        d.setDate(d.getDate() + 7)
+        return d.toISOString().split('T')[0]
+      })()
+      try {
+        await updateProspect(p.id, { date_relance: dateRelance })
+        planned++
+      } catch (err) {
+        console.error(`Erreur batch plan ${p.nom}:`, err)
+      }
+    }
+    setBatchSending(false)
+    setSelected(new Set())
+    if (reload) reload()
+    toast.success(`${planned} relance${planned > 1 ? 's' : ''} planifiée${planned > 1 ? 's' : ''}`)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -95,6 +237,48 @@ export default function ListPage({
     <div className="p-6 space-y-4">
       {/* Relances widget */}
       <RelancesWidget prospects={prospects} onSelectProspect={onSelectProspect} onReload={reload} />
+
+      {/* Batch action bar */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-primary/5 border border-primary/20 rounded-lg">
+          <span className="text-sm font-medium text-primary">
+            {selected.size} sélectionné{selected.size > 1 ? 's' : ''}
+          </span>
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={handleBatchEmail}
+              disabled={batchSending}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors font-medium disabled:opacity-50"
+            >
+              <Mail size={13} />
+              Relancer par email
+            </button>
+            <button
+              onClick={handleBatchWhatsApp}
+              disabled={batchSending}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors font-medium disabled:opacity-50"
+            >
+              <MessageCircle size={13} />
+              Relancer par WhatsApp
+            </button>
+            <button
+              onClick={handleBatchPlanRelance}
+              disabled={batchSending}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium disabled:opacity-50"
+            >
+              <CalendarPlus size={13} />
+              Planifier relances
+            </button>
+            <button
+              onClick={() => setSelected(new Set())}
+              className="p-1.5 rounded-lg hover:bg-bg-hover transition-colors text-text-secondary"
+              title="Désélectionner"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
@@ -149,9 +333,17 @@ export default function ListPage({
 
       {/* Table */}
       <div className="bg-bg-card border border-border rounded-lg overflow-x-auto">
-        <table className="w-full min-w-[800px]">
+        <table className="w-full min-w-[850px]">
           <thead className="border-b border-border">
             <tr>
+              <th className="px-3 py-3 w-10">
+                <button onClick={toggleSelectAll} className="text-text-secondary hover:text-primary transition-colors">
+                  {selected.size === filtered.length && filtered.length > 0
+                    ? <CheckSquare size={16} className="text-primary" />
+                    : <Square size={16} />
+                  }
+                </button>
+              </th>
               {sortHeader('nom', 'Nom')}
               {sortHeader('etablissement', 'Établissement')}
               {sortHeader('ville', 'Ville')}
@@ -166,19 +358,33 @@ export default function ListPage({
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-8 text-text-secondary text-sm">
+                <td colSpan={10} className="text-center py-8 text-text-secondary text-sm">
                   Aucun prospect trouvé
                 </td>
               </tr>
             ) : (
               filtered.map(p => {
                 const overdue = isRelanceOverdue(p.date_relance)
+                const isSelected = selected.has(p.id)
                 return (
                   <tr
                     key={p.id}
                     onClick={() => onSelectProspect(p)}
-                    className="border-b border-border/50 hover:bg-bg-hover cursor-pointer transition-colors"
+                    className={`border-b border-border/50 hover:bg-bg-hover cursor-pointer transition-colors ${
+                      isSelected ? 'bg-primary/5' : ''
+                    }`}
                   >
+                    <td className="px-3 py-3">
+                      <button
+                        onClick={(e) => toggleSelect(p.id, e)}
+                        className="text-text-secondary hover:text-primary transition-colors"
+                      >
+                        {isSelected
+                          ? <CheckSquare size={16} className="text-primary" />
+                          : <Square size={16} />
+                        }
+                      </button>
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium text-text-primary">
                       {p.nom}
                     </td>
