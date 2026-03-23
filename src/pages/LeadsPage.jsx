@@ -52,11 +52,11 @@ function parseEmlContent(emlText) {
       .replace(/<\/div>/gi, '\n')
       .replace(/<\/tr>/gi, '\n')
       .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
+
+    // Décoder toutes les entités HTML via le décodeur natif du navigateur
+    const textarea = document.createElement('textarea')
+    textarea.innerHTML = decoded
+    decoded = textarea.value
   }
 
   return decoded.trim()
@@ -81,6 +81,8 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
   // Parser un texte brut en leads
   const parseAndSetLeads = useCallback((text) => {
     if (!text.trim()) return
+
+    console.log('[Parse] Texte brut reçu (200 premiers chars):', text.slice(0, 200))
 
     const blocks = text
       .split(/(?=NOUVEAU LEAD VALORISATION)/)
@@ -144,12 +146,14 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
         .replace(/<\/li>/gi, '\n')
         .replace(/<\/h[1-6]>/gi, '\n')
         .replace(/<[^>]+>/g, '')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
+
+      // Décoder TOUTES les entités HTML (y compris &eacute;, &agrave;, etc.)
+      // via le décodeur natif du navigateur
+      const textarea = document.createElement('textarea')
+      textarea.innerHTML = content
+      content = textarea.value
+
+      content = content
         .replace(/\n{3,}/g, '\n\n')
         .trim()
 
