@@ -84,7 +84,7 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
 
     const blocks = text
       .split(/(?=NOUVEAU LEAD VALORISATION)/)
-      .filter(b => b.trim().length > 50)
+      .filter(b => b.trim().length > 30)
 
     if (blocks.length === 0) blocks.push(text)
 
@@ -97,18 +97,75 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
         _raw: block.slice(0, 200) + '...',
         _duplicate: null,
       }
-    }).filter(l => l.nom || l.email || l.telephone)
+    })
 
-    if (leads.length === 0) {
-      toast.error('Aucun lead détecté')
+    // Filtrer les leads qui ont au moins une info utile
+    const validLeads = leads.filter(l => l.nom || l.email || l.telephone || l.simulateur_estimation || l.ca_annuel_declare)
+
+    if (validLeads.length === 0) {
+      // Si rien trouvé, créer quand même un lead "brut" pour ne pas perdre l'info
+      const hasAnyData = leads.some(l => Object.keys(l).filter(k => !k.startsWith('_') && k !== 'statut' && k !== 'priorite' && k !== 'label' && k !== 'color').length > 0)
+      if (hasAnyData) {
+        toast.error('Lead détecté mais incomplet (nom, email ou téléphone manquant). Vérifiez le texte collé.')
+      } else {
+        toast.error('Aucun lead détecté dans ce texte. Vérifiez que vous avez bien collé un email du simulateur.')
+      }
+      console.warn('[Parse] Texte reçu:', text.slice(0, 500))
+      console.warn('[Parse] Résultat parsing:', leads)
       return
     }
 
-    setParsedLeads(prev => [...prev, ...leads])
-    toast.success(`${leads.length} lead${leads.length > 1 ? 's' : ''} détecté${leads.length > 1 ? 's' : ''}`)
+    setParsedLeads(prev => [...prev, ...validLeads])
+    toast.success(`${validLeads.length} lead${validLeads.length > 1 ? 's' : ''} détecté${validLeads.length > 1 ? 's' : ''}`)
   }, [toast])
 
-  // Parser les emails collés
+  // Intercepter le collage pour récupérer le HTML et auto-parser
+  const handlePaste = useCallback((e) => {
+    const clipboard = e.clipboardData
+    if (!clipboard) return
+
+    // Récupérer le HTML en priorité (plus riche que le text/plain)
+    const html = clipboard.getData('text/html')
+    const plain = clipboard.getData('text/plain')
+
+    console.log('[Paste] html:', html?.slice(0, 200), 'plain:', plain?.slice(0, 200))
+
+    let content = plain || ''
+
+    // Si on a du HTML, le convertir en texte propre (préserve la structure)
+    if (html && html.length > 20) {
+      e.preventDefault() // empêcher le paste natif, on gère nous-mêmes
+      content = html
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<\/tr>/gi, '\n')
+        .replace(/<\/li>/gi, '\n')
+        .replace(/<\/h[1-6]>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+
+      setPasteText(prev => prev ? prev + '\n\n' + content : content)
+
+      // Auto-parser après un court délai (laisser le state se mettre à jour)
+      setTimeout(() => parseAndSetLeads(content), 100)
+      return
+    }
+
+    // Si pas de HTML, on laisse le paste natif se faire et on auto-parse
+    if (plain && plain.trim().length > 10) {
+      setTimeout(() => parseAndSetLeads(plain), 100)
+    }
+  }, [parseAndSetLeads])
+
+  // Parser les emails collés (bouton manuel)
   const handleParse = () => {
     parseAndSetLeads(pasteText)
   }
@@ -390,6 +447,7 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
             <textarea
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
+              onPaste={handlePaste}
               placeholder="Collez ici un ou plusieurs emails du simulateur de valorisation, ou glissez un fichier .eml / du texte depuis votre boîte mail..."
               rows={8}
               className="w-full bg-bg-main border border-border rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary resize-none font-mono leading-relaxed"
