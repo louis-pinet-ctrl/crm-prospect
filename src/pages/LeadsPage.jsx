@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import {
   ClipboardPaste, Plus, CheckCircle2, AlertCircle, Phone, Mail, MessageCircle,
   ArrowRight, ChevronRight, Trash2, Calculator, X, Upload, FileText,
@@ -114,6 +114,8 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
   }
 
   // --- Drag & Drop ---
+  const dropZoneRef = useRef(null)
+
   const handleDragOver = useCallback((e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -123,7 +125,10 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
   const handleDragLeave = useCallback((e) => {
     e.preventDefault()
     e.stopPropagation()
-    setDragOver(false)
+    // Ne désactiver que si on quitte vraiment la zone (pas un enfant)
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget)) {
+      setDragOver(false)
+    }
   }, [])
 
   const handleDrop = useCallback(async (e) => {
@@ -131,56 +136,65 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
     e.stopPropagation()
     setDragOver(false)
 
-    // 1. Texte glissé directement (drag depuis Gmail, Outlook web, etc.)
-    const droppedText = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/html')
-    if (droppedText && droppedText.trim().length > 30) {
-      // Strip HTML si c'est du HTML
-      let cleanText = droppedText
+    // 1. Fichiers glissés (.eml, .txt, .msg) — vérifier en premier
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length > 0) {
+      const validFiles = files.filter(f =>
+        f.name.endsWith('.eml') || f.name.endsWith('.txt') || f.name.endsWith('.msg')
+        || f.type === 'text/plain' || f.type === 'message/rfc822'
+        || f.type === '' // Certains clients mail ne mettent pas de type MIME
+      )
+
+      if (validFiles.length === 0) {
+        toast.error('Format non supporté. Glissez des fichiers .eml ou .txt, ou glissez le texte directement.')
+        return
+      }
+
+      let allText = ''
+      for (const file of validFiles) {
+        try {
+          const text = await file.text()
+          const content = file.name.endsWith('.eml') ? parseEmlContent(text) : text
+          allText += (allText ? '\n\n' : '') + content
+        } catch (err) {
+          console.error('Erreur lecture fichier:', file.name, err)
+          toast.error(`Erreur lecture : ${file.name}`)
+        }
+      }
+
+      if (allText) {
+        setPasteText(prev => prev ? prev + '\n\n' + allText : allText)
+        parseAndSetLeads(allText)
+      }
+      return
+    }
+
+    // 2. Texte glissé directement (drag depuis Gmail, Outlook web, etc.)
+    const droppedHtml = e.dataTransfer.getData('text/html')
+    const droppedText = e.dataTransfer.getData('text/plain')
+    const rawText = droppedHtml || droppedText || ''
+
+    if (rawText.trim().length > 30) {
+      let cleanText = rawText
       if (cleanText.includes('<') && cleanText.includes('>')) {
         cleanText = cleanText
           .replace(/<br\s*\/?>/gi, '\n')
           .replace(/<\/p>/gi, '\n')
           .replace(/<\/div>/gi, '\n')
+          .replace(/<\/tr>/gi, '\n')
           .replace(/<[^>]+>/g, '')
           .replace(/&nbsp;/g, ' ')
           .replace(/&amp;/g, '&')
           .replace(/&lt;/g, '<')
           .replace(/&gt;/g, '>')
+          .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
       }
       setPasteText(prev => prev ? prev + '\n\n' + cleanText : cleanText)
       parseAndSetLeads(cleanText)
       return
     }
 
-    // 2. Fichiers glissés (.eml, .txt, .msg)
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length === 0) return
-
-    const validFiles = files.filter(f =>
-      f.name.endsWith('.eml') || f.name.endsWith('.txt') || f.type === 'text/plain' || f.type === 'message/rfc822'
-    )
-
-    if (validFiles.length === 0) {
-      toast.error('Format non supporté. Glissez des fichiers .eml ou .txt, ou glissez le texte directement.')
-      return
-    }
-
-    let allText = ''
-    for (const file of validFiles) {
-      try {
-        const text = await file.text()
-        const content = file.name.endsWith('.eml') ? parseEmlContent(text) : text
-        allText += (allText ? '\n\n' : '') + content
-      } catch (err) {
-        console.error('Erreur lecture fichier:', file.name, err)
-        toast.error(`Erreur lecture : ${file.name}`)
-      }
-    }
-
-    if (allText) {
-      setPasteText(prev => prev ? prev + '\n\n' + allText : allText)
-      parseAndSetLeads(allText)
-    }
+    toast.error('Aucun contenu détecté. Essayez de copier-coller le texte directement.')
   }, [parseAndSetLeads, toast])
 
   // Vérifier les doublons
@@ -308,6 +322,7 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
 
       {/* Zone drag & drop + paste */}
       <div
+        ref={dropZoneRef}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
