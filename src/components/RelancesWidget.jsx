@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
-import { Bell, ChevronDown, ChevronUp, AlertCircle, Clock, TrendingDown } from 'lucide-react'
-import { isRelanceOverdue, SEUIL_DORMANT_JOURS } from '../lib/constants'
+import { Bell, ChevronDown, ChevronUp, AlertCircle, Clock, TrendingDown, CalendarPlus, Mail, MessageCircle } from 'lucide-react'
+import { isRelanceOverdue, SEUIL_DORMANT_JOURS, getDateRelanceParStatut } from '../lib/constants'
+import { updateProspect } from '../lib/supabase'
 
-export default function RelancesWidget({ prospects, onSelectProspect }) {
+export default function RelancesWidget({ prospects, onSelectProspect, onReload }) {
   const [expanded, setExpanded] = useState(false)
 
   const today = new Date().toISOString().split('T')[0]
@@ -96,21 +97,9 @@ export default function RelancesWidget({ prospects, onSelectProspect }) {
                 <TrendingDown size={12} />
                 Dormants (+{SEUIL_DORMANT_JOURS}j sans interaction)
               </div>
-              {dormants.slice(0, 5).map(p => {
-                const last = p.date_derniere_interaction || p.date_creation
-                const days = last ? Math.round((now.getTime() - new Date(last).getTime()) / (1000 * 60 * 60 * 24)) : '?'
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => onSelectProspect(p)}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-bg-hover transition-colors text-left"
-                  >
-                    <TrendingDown size={12} className="text-orange-400 shrink-0" />
-                    <span className="text-text-primary truncate flex-1">{p.nom}</span>
-                    <span className="text-orange-400 text-xs shrink-0">{days}j</span>
-                  </button>
-                )
-              })}
+              {dormants.slice(0, 5).map(p => (
+                <DormantItem key={p.id} prospect={p} now={now} onSelectProspect={onSelectProspect} onReload={onReload} />
+              ))}
               {dormants.length > 5 && (
                 <div className="px-4 py-1.5 text-xs text-text-secondary text-center">
                   +{dormants.length - 5} autres
@@ -120,6 +109,51 @@ export default function RelancesWidget({ prospects, onSelectProspect }) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function DormantItem({ prospect: p, now, onSelectProspect, onReload }) {
+  const [planning, setPlanning] = useState(false)
+  const last = p.date_derniere_interaction || p.date_creation
+  const days = last ? Math.round((now.getTime() - new Date(last).getTime()) / (1000 * 60 * 60 * 24)) : '?'
+
+  const handlePlanRelance = async (e) => {
+    e.stopPropagation()
+    setPlanning(true)
+    try {
+      const dateRelance = getDateRelanceParStatut(p.statut) || (() => {
+        const d = new Date()
+        d.setDate(d.getDate() + 3)
+        return d.toISOString().split('T')[0]
+      })()
+      await updateProspect(p.id, { date_relance: dateRelance })
+      if (onReload) onReload()
+    } catch {
+      // silently fail
+    } finally {
+      setPlanning(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-bg-hover transition-colors group">
+      <button
+        onClick={() => onSelectProspect(p)}
+        className="flex items-center gap-2 flex-1 min-w-0 text-left"
+      >
+        <TrendingDown size={12} className="text-orange-400 shrink-0" />
+        <span className="text-text-primary truncate flex-1">{p.nom}</span>
+        <span className="text-orange-400 text-xs shrink-0">{days}j</span>
+      </button>
+      <button
+        onClick={handlePlanRelance}
+        disabled={planning}
+        className="p-1 rounded hover:bg-orange-500/20 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+        title="Planifier relance auto"
+      >
+        <CalendarPlus size={13} className={planning ? 'text-text-secondary animate-pulse' : 'text-orange-400'} />
+      </button>
     </div>
   )
 }

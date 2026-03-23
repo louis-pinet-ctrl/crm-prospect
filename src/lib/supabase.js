@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { getDateRelanceParStatut } from './constants'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -220,20 +221,31 @@ export async function deleteNote(id) {
 // Met à jour le prospect après ajout d'une interaction
 // - date_derniere_interaction = date de l'interaction
 // - nombre_relances_effectuees += 1 si c'est un appel/email/whatsapp
+// - date_relance auto-replanifiée selon le statut courant
 export async function updateProspectAfterInteraction(prospectId, typeNote, dateInteraction) {
   const TYPES_RELANCE = ['appel', 'email', 'whatsapp']
+
+  // Récupérer le prospect pour le compteur et le statut
+  const { data: prospect } = await supabase
+    .from('prospects')
+    .select('nombre_relances_effectuees, statut')
+    .eq('id', prospectId)
+    .single()
+
   const updates = {
     date_derniere_interaction: dateInteraction || new Date().toISOString(),
   }
 
   if (TYPES_RELANCE.includes(typeNote)) {
-    // Récupérer le compteur actuel
-    const { data: prospect } = await supabase
-      .from('prospects')
-      .select('nombre_relances_effectuees')
-      .eq('id', prospectId)
-      .single()
     updates.nombre_relances_effectuees = (prospect?.nombre_relances_effectuees || 0) + 1
+  }
+
+  // Auto-replanifier la prochaine relance
+  if (prospect?.statut) {
+    const nextRelance = getDateRelanceParStatut(prospect.statut)
+    if (nextRelance) {
+      updates.date_relance = nextRelance
+    }
   }
 
   const { error } = await supabase

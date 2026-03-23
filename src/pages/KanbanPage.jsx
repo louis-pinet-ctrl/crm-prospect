@@ -22,6 +22,7 @@ export default function KanbanPage({
   update,
   onSelectProspect,
   onAddProspect,
+  reload,
 }) {
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
@@ -231,7 +232,7 @@ export default function KanbanPage({
       )}
 
       {/* Relances + Pipeline summary */}
-      <RelancesWidget prospects={prospects} onSelectProspect={onSelectProspect} />
+      <RelancesWidget prospects={prospects} onSelectProspect={onSelectProspect} onReload={reload} />
       <PipelineSummary prospects={prospects} />
 
       {/* Kanban board - 3 tunnels */}

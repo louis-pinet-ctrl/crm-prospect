@@ -19,6 +19,7 @@ export default function ListPage({
   loading,
   onSelectProspect,
   onAddProspect,
+  reload,
 }) {
   const [search, setSearch] = useState('')
   const [filterStatut, setFilterStatut] = useState('')
@@ -93,7 +94,7 @@ export default function ListPage({
   return (
     <div className="p-6 space-y-4">
       {/* Relances widget */}
-      <RelancesWidget prospects={prospects} onSelectProspect={onSelectProspect} />
+      <RelancesWidget prospects={prospects} onSelectProspect={onSelectProspect} onReload={reload} />
 
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">

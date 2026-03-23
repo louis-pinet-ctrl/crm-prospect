@@ -58,16 +58,22 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
   const isNew = !prospect
 
   // Action rapide : crée une note d'interaction + ouvre le lien
-  const handleQuickAction = async (type, url, openInNewTab = false) => {
+  // templateContent optionnel = contenu du template utilisé pour historique
+  const handleQuickAction = async (type, url, openInNewTab = false, templateContent = null) => {
     if (!prospect?.id) return
 
     const labels = { appel: 'Appel sortant', email: 'Email envoyé', whatsapp: 'Message WhatsApp envoyé' }
+    const contenu = templateContent
+      ? `${labels[type] || type}\n---\n${templateContent}`
+      : (labels[type] || type)
+
     try {
       await createNote({
         prospect_id: prospect.id,
-        contenu: labels[type] || type,
+        contenu,
         type_note: type,
         date_interaction: new Date().toISOString(),
+        resultat: 'message_laisse',
       })
       await updateProspectAfterInteraction(prospect.id, type, new Date().toISOString())
       if (onReload) onReload()
@@ -527,6 +533,9 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                 )}
               </div>
 
+              {/* Suggestions intelligentes */}
+              <RelanceSuggestions prospect={prospect} onUpdate={onUpdate} onReload={onReload} />
+
               {/* Templates de relance */}
               <RelanceTemplates prospect={prospect} onQuickAction={handleQuickAction} />
 
@@ -601,7 +610,7 @@ function RelanceTemplates({ prospect, onQuickAction }) {
                   </button>
                   <button
                     onClick={() => {
-                      onQuickAction('email', emailUrl)
+                      onQuickAction('email', emailUrl, false, `Objet : ${templates.email.subject}\n\n${templates.email.body}`)
                       setShowTemplates(false)
                     }}
                     className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors font-medium"
@@ -638,7 +647,7 @@ function RelanceTemplates({ prospect, onQuickAction }) {
                   </button>
                   <button
                     onClick={() => {
-                      onQuickAction('whatsapp', whatsappUrl, true)
+                      onQuickAction('whatsapp', whatsappUrl, true, templates.whatsapp)
                       setShowTemplates(false)
                     }}
                     className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors font-medium"
@@ -664,6 +673,93 @@ function RelanceTemplates({ prospect, onQuickAction }) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function RelanceSuggestions({ prospect, onUpdate, onReload }) {
+  const p = prospect
+  if (!p) return null
+
+  const suggestions = []
+  const relances = p.nombre_relances_effectuees || 0
+  const daysSince = p.date_derniere_interaction
+    ? Math.round((new Date() - new Date(p.date_derniere_interaction)) / (1000 * 60 * 60 * 24))
+    : null
+
+  // 5+ relances sans conversion sur statuts early-stage
+  if (relances >= 5 && ['prospect_identifie', 'premier_contact', 'relance_en_attente'].includes(p.statut)) {
+    suggestions.push({
+      type: 'danger',
+      message: `${relances} relances sans avancement. Envisagez de passer en « Suivi long terme » ou « Perdu/Refusé ».`,
+      actions: [
+        { label: 'Suivi long terme', statut: 'suivi_long_terme' },
+        { label: 'Perdu / Refusé', statut: 'perdu_refuse' },
+      ],
+    })
+  }
+
+  // 30+ jours sans interaction sur statut actif
+  if (daysSince && daysSince > 30 && !['cloture', 'perdu_refuse', 'facture', 'prescripteur', 'suivi_long_terme'].includes(p.statut)) {
+    suggestions.push({
+      type: 'warning',
+      message: `${daysSince} jours sans interaction. Ce prospect risque de se refroidir.`,
+    })
+  }
+
+  // Lettre de mission envoyée depuis longtemps sans conversion
+  if (p.statut === 'lettre_mission_envoyee' && relances >= 3) {
+    suggestions.push({
+      type: 'info',
+      message: 'Lettre de mission en attente depuis plusieurs relances. Proposez un ajustement des conditions ?',
+    })
+  }
+
+  // Pas de relance planifiée
+  if (!p.date_relance && !['cloture', 'perdu_refuse', 'facture', 'mission_en_cours'].includes(p.statut)) {
+    suggestions.push({
+      type: 'info',
+      message: 'Aucune relance planifiée pour ce prospect.',
+    })
+  }
+
+  if (suggestions.length === 0) return null
+
+  const colors = {
+    danger: 'bg-danger/5 border-danger/20 text-danger',
+    warning: 'bg-warning/5 border-warning/20 text-warning',
+    info: 'bg-primary/5 border-primary/20 text-primary',
+  }
+
+  const handleStatusChange = async (newStatut) => {
+    try {
+      await onUpdate(prospect.id, { statut: newStatut })
+      if (onReload) onReload()
+    } catch {
+      // handled upstream
+    }
+  }
+
+  return (
+    <div className="space-y-2 mb-3">
+      {suggestions.map((s, i) => (
+        <div key={i} className={`text-xs p-3 rounded-lg border ${colors[s.type]}`}>
+          <p>{s.message}</p>
+          {s.actions && (
+            <div className="flex gap-2 mt-2">
+              {s.actions.map(a => (
+                <button
+                  key={a.statut}
+                  onClick={() => handleStatusChange(a.statut)}
+                  className="px-2 py-1 rounded bg-bg-card border border-border text-text-primary hover:border-primary hover:text-primary transition-colors text-[11px]"
+                >
+                  → {a.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   )
 }

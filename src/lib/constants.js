@@ -50,6 +50,29 @@ export const SUIVI_STATUTS = ['cloture', 'perdu_refuse', 'prescripteur', 'suivi_
 
 export const DELAI_RELANCE_SUIVI_JOURS = 90
 
+// Délais de relance automatique par statut (en jours)
+export const DELAIS_RELANCE_PAR_STATUT = {
+  prospect_identifie: 3,      // Relancer rapidement un prospect froid
+  premier_contact: 7,         // Laisser le temps de réfléchir
+  diagnostic_rdv: 5,          // Suivi post-RDV assez rapide
+  relance_en_attente: 14,     // Relance standard
+  lettre_mission_envoyee: 7,  // Suivi lettre de mission
+  prescripteur: 90,           // Trimestriel
+  suivi_long_terme: 90,       // Trimestriel
+}
+
+/**
+ * Calcule la prochaine date de relance en fonction du statut.
+ * Retourne une date ISO string (YYYY-MM-DD) ou null.
+ */
+export function getDateRelanceParStatut(statut) {
+  const delai = DELAIS_RELANCE_PAR_STATUT[statut]
+  if (!delai) return null
+  const date = new Date()
+  date.setDate(date.getDate() + delai)
+  return date.toISOString().split('T')[0]
+}
+
 export const TYPES_DOSSIER = [
   { value: 'cession_fonds', label: 'Cession de fonds de commerce', color: '#8b5cf6' },
   { value: 'cession_droit_bail', label: 'Cession de droit au bail', color: '#6366f1' },

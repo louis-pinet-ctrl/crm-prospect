@@ -13,6 +13,8 @@ import {
   SEUIL_MINIMUM_CESSION_FONDS,
   SUIVI_STATUTS,
   getDateRelanceSuivi,
+  getDateRelanceParStatut,
+  DELAIS_RELANCE_PAR_STATUT,
 } from '../lib/constants'
 import { fetchCompanyBySiret } from '../lib/pappers'
 import { checkDuplicate } from '../lib/supabase'
@@ -96,12 +98,12 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
           next.mode_honoraires = 'forfait'
         }
       }
-      // Auto-set relance +90j quand on passe dans le tunnel Suivi
-      if (field === 'statut') {
-        const wasInSuivi = SUIVI_STATUTS.includes(prev.statut)
-        const nowInSuivi = SUIVI_STATUTS.includes(value)
-        if (!wasInSuivi && nowInSuivi && !prev.date_relance) {
-          next.date_relance = getDateRelanceSuivi()
+      // Auto-planifier la relance quand le statut change
+      if (field === 'statut' && value !== prev.statut) {
+        const autoDate = getDateRelanceParStatut(value)
+        if (autoDate) {
+          // Toujours proposer une date de relance adaptée au nouveau statut
+          next.date_relance = autoDate
         }
       }
       return next
