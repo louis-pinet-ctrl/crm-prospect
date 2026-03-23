@@ -561,7 +561,7 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
             Aucun lead simulateur en attente de qualification
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+          <div className="space-y-2">
             {existingLeads.map(p => (
               <LeadCard key={p.id} prospect={p} onSelect={() => onSelectProspect(p)} />
             ))}
@@ -624,35 +624,35 @@ function LeadCard({ prospect: p, onSelect }) {
   return (
     <button
       onClick={onSelect}
-      className="w-full flex flex-col gap-1.5 px-3 py-2.5 rounded-lg border border-border bg-bg-card hover:border-primary/30 transition-all text-left"
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-bg-card hover:border-primary/30 transition-all text-left"
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium text-text-primary truncate">{p.nom}</span>
-        <ChevronRight size={14} className="text-text-secondary shrink-0" />
-      </div>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span
-          className="text-[10px] px-1.5 py-0.5 rounded-full"
-          style={{
-            backgroundColor: getTypeDossierColor(p.type_dossier) + '20',
-            color: getTypeDossierColor(p.type_dossier),
-          }}
-        >
-          {getTypeDossierLabel(p.type_dossier)}
-        </span>
-        {p.simulateur_estimation && (
-          <span className="text-[10px] text-primary flex items-center gap-0.5">
-            <Calculator size={10} />
-            {formatCurrency(p.simulateur_estimation)}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-text-primary">{p.nom}</span>
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded-full"
+            style={{
+              backgroundColor: getTypeDossierColor(p.type_dossier) + '20',
+              color: getTypeDossierColor(p.type_dossier),
+            }}
+          >
+            {getTypeDossierLabel(p.type_dossier)}
           </span>
-        )}
-        {daysSince != null && <span className="text-[10px] text-text-secondary">il y a {daysSince}j</span>}
-        {p.nombre_relances_effectuees > 0 && <span className="text-[10px] text-text-secondary">{p.nombre_relances_effectuees} rel.</span>}
+          {p.simulateur_estimation && (
+            <span className="text-[10px] text-primary flex items-center gap-0.5">
+              <Calculator size={10} />
+              {formatCurrency(p.simulateur_estimation)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 mt-0.5 text-[11px] text-text-secondary">
+          {p.email && <span>{p.email}</span>}
+          {p.telephone && <span>{p.telephone}</span>}
+          {daysSince != null && <span>il y a {daysSince}j</span>}
+          {p.nombre_relances_effectuees > 0 && <span>{p.nombre_relances_effectuees} relances</span>}
+        </div>
       </div>
-      <div className="flex items-center gap-2 text-[11px] text-text-secondary truncate">
-        {p.telephone && <span>{p.telephone}</span>}
-        {p.email && <span className="truncate">{p.email}</span>}
-      </div>
+      <ChevronRight size={16} className="text-text-secondary shrink-0" />
     </button>
   )
 }

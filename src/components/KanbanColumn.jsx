@@ -32,8 +32,10 @@ export default function KanbanColumn({ statut, prospects, onSelectProspect, coll
     )
   }
 
+  const useGrid = prospects.length > 8
+
   return (
-    <div className="flex-shrink-0 w-72">
+    <div className={`flex-shrink-0 ${useGrid ? 'w-[37rem]' : 'w-72'}`}>
       <div className="flex items-center justify-between mb-3 px-1">
         <h3
           className="text-sm font-medium text-text-secondary cursor-pointer hover:text-text-primary transition-colors"
@@ -50,7 +52,8 @@ export default function KanbanColumn({ statut, prospects, onSelectProspect, coll
       <div
         ref={setNodeRef}
         className={`
-          space-y-2 min-h-[200px] p-2 rounded-lg transition-colors
+          min-h-[200px] p-2 rounded-lg transition-colors
+          ${useGrid ? 'grid grid-cols-2 gap-2' : 'space-y-2'}
           ${isOver ? 'bg-primary/5 border border-primary/20' : 'bg-bg-main/50 border border-transparent'}
         `}
       >
