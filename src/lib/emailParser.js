@@ -271,8 +271,12 @@ function parseGenericEmail(text) {
 
   // Nom — essayer plusieurs patterns, du plus fiable au moins fiable
   if (!result.nom) {
-    const fromMatch = text.match(/(?:De|From)\s*:\s*([A-ZÀ-Üa-zà-ü][a-zà-ü]+\s+[A-ZÀ-Üa-zà-ü][A-ZÀ-Üa-zà-ü]+)/i)
-    if (fromMatch) result.nom = fromMatch[1].trim()
+    // Chercher "De: Prénom Nom" mais ignorer les lignes qui contiennent un email système
+    const fromLine = text.match(/^(?:De|From)\s*:.*$/im)
+    if (fromLine && ![...IGNORED_EMAILS].some(e => fromLine[0].toLowerCase().includes(e.split('@')[0]))) {
+      const fromMatch = fromLine[0].match(/(?:De|From)\s*:\s*([A-ZÀ-Üa-zà-ü][a-zà-ü]+\s+[A-ZÀ-Üa-zà-ü][A-ZÀ-Üa-zà-ü]+)/i)
+      if (fromMatch) result.nom = fromMatch[1].trim()
+    }
   }
   if (!result.nom) {
     const jeSuisMatch = text.match(/(?:je suis|je m'appelle|moi c'est|c'est)\s+([A-ZÀ-Ü][a-zà-ü]+\s+[A-ZÀ-Ü][A-ZÀ-Üa-zà-ü]+)/i)
@@ -338,23 +342,11 @@ function parseGenericEmail(text) {
   return result
 }
 
-// --- Nettoyage des headers d'email Outlook/Gmail collés ---
-function stripEmailHeaders(text) {
-  // Retirer les lignes d'en-tête classiques qui contiennent une adresse email ou des métadonnées
-  // On cible uniquement les headers courts (De/From/To/Cc etc.) PAS "Date simulation" ou autres champs métier
-  return text.replace(
-    /^(?:De|From|À|To|Cc|Cci|Bcc|Objet|Subject|Envoyé|Sent|Importance)\s*:.*$/gim,
-    ''
-  ).trim()
-}
-
 // --- Point d'entrée principal ---
 export function parseEmailText(text) {
   // Détecter si c'est un email du simulateur de valorisation
   if (text.includes('NOUVEAU LEAD VALORISATION') || text.includes('VALORISATION CALCULÉE')) {
-    // Pour le simulateur, nettoyer les headers avant parsing pour éviter de capter l'expéditeur
-    const cleaned = stripEmailHeaders(text)
-    return parseSimulateurLead(cleaned)
+    return parseSimulateurLead(text)
   }
-  return parseGenericEmail(stripEmailHeaders(text))
+  return parseGenericEmail(text)
 }
