@@ -13,6 +13,7 @@ import {
   CalendarDays,
   Sun,
   Zap,
+  CheckSquare,
 } from 'lucide-react'
 import { useProspects } from './hooks/useProspects'
 import { onAuthStateChange, signOut, getSession, supabase } from './lib/supabase'
@@ -25,6 +26,7 @@ import CommentairesPage from './pages/CommentairesPage'
 import AgendaPage from './pages/AgendaPage'
 import MaJourneePage from './pages/MaJourneePage'
 import LeadsPage from './pages/LeadsPage'
+import TodosPage from './pages/TodosPage'
 import ProspectModal from './components/ProspectModal'
 import GlobalSearch from './components/GlobalSearch'
 import { useToast } from './components/Toast'
@@ -121,6 +123,7 @@ export default function App() {
     { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
     { to: '/agenda', icon: CalendarDays, label: 'Agenda' },
     { to: '/leads', icon: Zap, label: 'Leads' },
+    { to: '/todos', icon: CheckSquare, label: 'To Do' },
     { to: '/list', icon: List, label: 'Liste' },
     { to: '/commentaires', icon: MessageSquare, label: 'Commentaires' },
   ]
@@ -250,6 +253,15 @@ export default function App() {
                 prospects={prospectData.prospects}
                 onSelectProspect={setSelectedProspect}
                 reload={prospectData.reload}
+              />
+            }
+          />
+          <Route
+            path="/todos"
+            element={
+              <TodosPage
+                prospects={prospectData.prospects}
+                onSelectProspect={setSelectedProspect}
               />
             }
           />

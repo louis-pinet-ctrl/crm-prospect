@@ -337,6 +337,45 @@ export async function deleteCommentaire(id) {
   if (error) throw error
 }
 
+// --- Todos ---
+
+export async function fetchTodos() {
+  const { data, error } = await supabase
+    .from('todos')
+    .select('*')
+    .order('fait', { ascending: true })
+    .order('echeance', { ascending: true, nullsFirst: false })
+    .order('date_creation', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function createTodo({ titre, categorie = null, echeance = null, prospect_id = null, prospect_nom = null }) {
+  const { data, error } = await supabase
+    .from('todos')
+    .insert({ titre, categorie, echeance, prospect_id, prospect_nom, fait: false })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateTodo(id, updates) {
+  const { data, error } = await supabase
+    .from('todos')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteTodo(id) {
+  const { error } = await supabase.from('todos').delete().eq('id', id)
+  if (error) throw error
+}
+
 // --- Auth ---
 
 export async function signIn(email, password) {
