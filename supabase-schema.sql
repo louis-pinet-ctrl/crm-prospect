@@ -84,6 +84,7 @@ CREATE TABLE prospects (
   -- Outils
   simulateur_valorisation BOOLEAN DEFAULT FALSE,
   simulateur_estimation NUMERIC,
+  simulateur_date DATE,
   diaglocal BOOLEAN DEFAULT FALSE,
   diaglocal_adresse TEXT,
   diaglocal_notes TEXT,

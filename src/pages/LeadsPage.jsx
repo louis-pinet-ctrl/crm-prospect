@@ -238,6 +238,7 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
         if (lead.loyer_mensuel) prospectData.loyer_mensuel = lead.loyer_mensuel
         if (lead.nombre_salaries) prospectData.nombre_salaries = lead.nombre_salaries
         if (lead.simulateur_estimation) prospectData.simulateur_estimation = lead.simulateur_estimation
+        if (lead.simulateur_date) prospectData.simulateur_date = lead.simulateur_date
         if (lead.type_prescripteur) prospectData.type_prescripteur = lead.type_prescripteur
 
         // Essayer l'insert, fallback si enum manquant en base
@@ -482,6 +483,7 @@ function ParsedLeadCard({ lead, index, onRemove }) {
             <span>{TYPES_CUISINE.find(t => t.value === lead.type_cuisine)?.label || lead.type_cuisine}</span>
           )}
           {lead.ca_annuel_declare && <span>CA: {formatCurrency(lead.ca_annuel_declare)}</span>}
+          {lead.simulateur_date && <span>Simulation : {new Date(lead.simulateur_date).toLocaleDateString('fr-FR')}</span>}
         </div>
       </div>
       <button

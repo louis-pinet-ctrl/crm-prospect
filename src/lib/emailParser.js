@@ -152,7 +152,18 @@ function parseSimulateurLead(text) {
   }
 
   const dateSimMatch = text.match(/Date simulation\s*:\s*(.+)/i)
-  result._date_simulation = dateSimMatch ? dateSimMatch[1].trim() : null
+  if (dateSimMatch) {
+    const raw = dateSimMatch[1].trim()
+    // Essayer de parser en ISO date (YYYY-MM-DD) pour Supabase
+    const isoMatch = raw.match(/(\d{4})-(\d{2})-(\d{2})/)
+    const frMatch = raw.match(/(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})/)
+    if (isoMatch) {
+      result.simulateur_date = isoMatch[0]
+    } else if (frMatch) {
+      result.simulateur_date = `${frMatch[3]}-${frMatch[2].padStart(2, '0')}-${frMatch[1].padStart(2, '0')}`
+    }
+    result._date_simulation_raw = raw
+  }
 
   // Construire le source_detail avec toutes les infos complémentaires
   const details = []
@@ -169,7 +180,7 @@ function parseSimulateurLead(text) {
   if (result.simulateur_estimation) {
     details.push(`Médiane: ${result.simulateur_estimation.toLocaleString('fr-FR')} €`)
   }
-  if (result._date_simulation) details.push(`Simulation du ${result._date_simulation}`)
+  if (result._date_simulation_raw) details.push(`Simulation du ${result._date_simulation_raw}`)
   result.source_detail = details.join(' | ')
 
   // Construire les notes bail + juridique

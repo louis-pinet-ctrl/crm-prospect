@@ -10,3 +10,6 @@ ALTER TYPE statut_enum ADD VALUE IF NOT EXISTS 'suivi_long_terme';
 
 -- 3. Ajouter 'whatsapp' au type_note_enum s'il n'existe pas
 ALTER TYPE type_note_enum ADD VALUE IF NOT EXISTS 'whatsapp';
+
+-- 4. Ajouter la colonne simulateur_date (date d'utilisation du simulateur)
+ALTER TABLE prospects ADD COLUMN IF NOT EXISTS simulateur_date DATE;

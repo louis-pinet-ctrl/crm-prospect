@@ -420,6 +420,11 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                         <Calculator size={12} />
                         Simulateur
                         {prospect.simulateur_estimation != null && ` — ${formatCurrency(prospect.simulateur_estimation)}`}
+                        {prospect.simulateur_date && (
+                          <span className="text-primary/60 ml-1">
+                            ({new Date(prospect.simulateur_date).toLocaleDateString('fr-FR')})
+                          </span>
+                        )}
                       </span>
                     )}
                     {prospect.diaglocal && (

@@ -66,6 +66,7 @@ const defaultValues = {
   diaglocal_adresse: '',
   diaglocal_notes: '',
   simulateur_estimation: null,
+  simulateur_date: '',
   // Prescripteur & Suivi
   type_prescripteur: '',
   nombre_deals_apportes: 0,
@@ -883,16 +884,27 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         {form.simulateur_valorisation && (
           <div className="mt-3 p-3 bg-bg-main rounded-lg space-y-3">
             <p className="text-xs text-text-secondary font-medium">Résultat simulateur pré-cession</p>
-            <div>
-              <label className={labelClass}>Estimation valorisation (EUR)</label>
-              <input
-                type="number"
-                step="1000"
-                value={form.simulateur_estimation ?? ''}
-                onChange={setNullableNumber('simulateur_estimation')}
-                placeholder="Ex: 250000"
-                className={inputClass}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Estimation valorisation (EUR)</label>
+                <input
+                  type="number"
+                  step="1000"
+                  value={form.simulateur_estimation ?? ''}
+                  onChange={setNullableNumber('simulateur_estimation')}
+                  placeholder="Ex: 250000"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Date utilisation simulateur</label>
+                <input
+                  type="date"
+                  value={form.simulateur_date || ''}
+                  onChange={(e) => setForm(f => ({ ...f, simulateur_date: e.target.value || null }))}
+                  className={inputClass}
+                />
+              </div>
             </div>
           </div>
         )}
