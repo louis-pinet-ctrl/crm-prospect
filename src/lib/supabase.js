@@ -376,6 +376,81 @@ export async function deleteTodo(id) {
   if (error) throw error
 }
 
+// --- Dossier Étapes ---
+
+export async function fetchDossierEtapes(prospectId) {
+  const { data, error } = await supabase
+    .from('dossier_etapes')
+    .select('*')
+    .eq('prospect_id', prospectId)
+    .order('ordre', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createDossierEtapes(etapes) {
+  const { data, error } = await supabase
+    .from('dossier_etapes')
+    .insert(etapes)
+    .select()
+  if (error) throw error
+  return data
+}
+
+export async function updateDossierEtape(id, updates) {
+  const { data, error } = await supabase
+    .from('dossier_etapes')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteDossierEtape(id) {
+  const { error } = await supabase.from('dossier_etapes').delete().eq('id', id)
+  if (error) throw error
+}
+
+// --- Dossier Tâches ---
+
+export async function fetchDossierTaches(prospectId) {
+  const { data, error } = await supabase
+    .from('dossier_taches')
+    .select('*')
+    .eq('prospect_id', prospectId)
+    .order('date_creation', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createDossierTache(tache) {
+  const { data, error } = await supabase
+    .from('dossier_taches')
+    .insert(tache)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateDossierTache(id, updates) {
+  const { data, error } = await supabase
+    .from('dossier_taches')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteDossierTache(id) {
+  const { error } = await supabase.from('dossier_taches').delete().eq('id', id)
+  if (error) throw error
+}
+
 // --- Auth ---
 
 export async function signIn(email, password) {

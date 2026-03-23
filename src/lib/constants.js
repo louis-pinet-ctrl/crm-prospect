@@ -256,3 +256,78 @@ export function isRelanceOverdue(dateRelance) {
 
 // Seuil de jours sans interaction pour considérer un prospect comme dormant
 export const SEUIL_DORMANT_JOURS = 14
+
+// Templates d'étapes par type de dossier (pour la gestion des dossiers clients)
+export const DOSSIER_TEMPLATES = {
+  cession_fonds: {
+    label: 'Cession de fonds de commerce',
+    etapes: [
+      { nom: 'Avant-contrat', description: 'LOI, collecte de documents, due diligence' },
+      { nom: 'Promesse sous conditions', description: 'Rédaction de la promesse, conditions suspensives' },
+      { nom: 'Période intermédiaire', description: 'Levée des conditions suspensives, obtention des autorisations' },
+      { nom: 'Signature', description: 'Signature de l\'acte définitif' },
+      { nom: 'Formalités', description: 'Enregistrement, publications légales, transferts' },
+    ],
+  },
+  cession_droit_bail: {
+    label: 'Cession de droit au bail',
+    etapes: [
+      { nom: 'Avant-contrat', description: 'Analyse du bail, collecte de documents' },
+      { nom: 'Accord du bailleur', description: 'Notification au bailleur, obtention de l\'agrément' },
+      { nom: 'Rédaction de l\'acte', description: 'Rédaction de l\'acte de cession' },
+      { nom: 'Signature', description: 'Signature de l\'acte de cession' },
+      { nom: 'Formalités', description: 'Signification, enregistrement' },
+    ],
+  },
+  bail_nu: {
+    label: 'Bail nu',
+    etapes: [
+      { nom: 'Négociation', description: 'Conditions du bail, loyer, durée' },
+      { nom: 'Rédaction du bail', description: 'Rédaction du contrat de bail commercial' },
+      { nom: 'Signature', description: 'Signature du bail' },
+      { nom: 'État des lieux', description: 'État des lieux d\'entrée' },
+    ],
+  },
+  franchise: {
+    label: 'Franchise',
+    etapes: [
+      { nom: 'DIP & Analyse', description: 'Document d\'information précontractuelle, analyse du réseau' },
+      { nom: 'Négociation du contrat', description: 'Négociation des termes du contrat de franchise' },
+      { nom: 'Rédaction', description: 'Rédaction / revue du contrat de franchise' },
+      { nom: 'Signature', description: 'Signature du contrat de franchise' },
+      { nom: 'Mise en place', description: 'Formation, ouverture, formalités' },
+    ],
+  },
+  liquidation: {
+    label: 'Liquidation',
+    etapes: [
+      { nom: 'Analyse de la situation', description: 'Audit, état des dettes, actifs' },
+      { nom: 'Déclaration de cessation', description: 'Déclaration au tribunal' },
+      { nom: 'Procédure', description: 'Suivi de la procédure de liquidation' },
+      { nom: 'Clôture', description: 'Clôture de la liquidation, radiation' },
+    ],
+  },
+  contentieux: {
+    label: 'Contentieux',
+    etapes: [
+      { nom: 'Analyse du litige', description: 'Étude du dossier, stratégie' },
+      { nom: 'Phase amiable', description: 'Mise en demeure, négociation' },
+      { nom: 'Phase judiciaire', description: 'Assignation, conclusions, audiences' },
+      { nom: 'Décision & exécution', description: 'Jugement, appel éventuel, exécution' },
+    ],
+  },
+  autre: {
+    label: 'Autre',
+    etapes: [
+      { nom: 'Étape 1', description: '' },
+      { nom: 'Étape 2', description: '' },
+      { nom: 'Étape 3', description: '' },
+    ],
+  },
+}
+
+export const STATUTS_ETAPE = [
+  { value: 'a_faire', label: 'À faire', color: '#6b7280' },
+  { value: 'en_cours', label: 'En cours', color: '#3b82f6' },
+  { value: 'termine', label: 'Terminé', color: '#22c55e' },
+]
