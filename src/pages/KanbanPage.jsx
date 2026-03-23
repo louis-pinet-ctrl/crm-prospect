@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -30,10 +30,22 @@ export default function KanbanPage({
   const [filterPriorite, setFilterPriorite] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [activeId, setActiveId] = useState(null)
-  const [collapsedTunnels, setCollapsedTunnels] = useState({})
-  const [collapsedColumns, setCollapsedColumns] = useState({})
+  const [collapsedTunnels, setCollapsedTunnels] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('crm_collapsed_tunnels')) || {} } catch { return {} }
+  })
+  const [collapsedColumns, setCollapsedColumns] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('crm_collapsed_columns')) || {} } catch { return {} }
+  })
   const [filterClientExistant, setFilterClientExistant] = useState(false)
   const toast = useToast()
+
+  useEffect(() => {
+    localStorage.setItem('crm_collapsed_tunnels', JSON.stringify(collapsedTunnels))
+  }, [collapsedTunnels])
+
+  useEffect(() => {
+    localStorage.setItem('crm_collapsed_columns', JSON.stringify(collapsedColumns))
+  }, [collapsedColumns])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -110,6 +122,8 @@ export default function KanbanPage({
     if (prospect.statut === targetStatut) return
 
     try {
+      const previousStatut = prospect.statut
+      const previousRelance = prospect.date_relance
       const updates = { statut: targetStatut }
 
       // Auto-set relance à +90j quand on entre dans le tunnel Suivi & Prescripteurs
@@ -120,6 +134,25 @@ export default function KanbanPage({
       }
 
       await update(prospectId, updates)
+
+      const fromLabel = STATUTS.find(s => s.value === previousStatut)?.label
+      const toLabel = STATUTS.find(s => s.value === targetStatut)?.label
+      toast.info(`${prospect.nom} → ${toLabel}`, {
+        duration: 5000,
+        action: {
+          label: 'Annuler',
+          onClick: async () => {
+            try {
+              const undo = { statut: previousStatut }
+              if (previousRelance !== undefined) undo.date_relance = previousRelance
+              await update(prospectId, undo)
+              toast.success(`${prospect.nom} → ${fromLabel}`)
+            } catch {
+              toast.error('Impossible d\'annuler')
+            }
+          },
+        },
+      })
     } catch (err) {
       console.error('Erreur lors du déplacement:', err)
       toast.error('Erreur lors du déplacement du prospect')
