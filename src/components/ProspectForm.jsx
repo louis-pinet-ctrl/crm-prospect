@@ -253,6 +253,13 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     if (!data.diaglocal_notes) data.diaglocal_notes = null
     if (!data.siret) data.siret = null
     if (!data.nom_expert_comptable) data.nom_expert_comptable = null
+    // Numeric fields: empty string → null
+    if (data.simulateur_estimation === '' || data.simulateur_estimation === null) data.simulateur_estimation = null
+    if (data.nombre_salaries === '' || data.nombre_salaries === null) data.nombre_salaries = null
+    if (data.ca_annuel_declare === '' || data.ca_annuel_declare === null) data.ca_annuel_declare = null
+    if (data.surface_local_m2 === '' || data.surface_local_m2 === null) data.surface_local_m2 = null
+    if (data.loyer_mensuel === '' || data.loyer_mensuel === null) data.loyer_mensuel = null
+    if (data.honoraires_override === '' || data.honoraires_override === null) data.honoraires_override = null
     // Remove computed/system fields
     delete data.ca_estime
     delete data.id
@@ -260,6 +267,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     delete data.date_modification
     delete data.user_id
     delete data.position_kanban
+    delete data.client_parent_id
 
     // Vérifier doublons si nouveau prospect et pas déjà averti
     if (!prospect && !duplicateWarning) {

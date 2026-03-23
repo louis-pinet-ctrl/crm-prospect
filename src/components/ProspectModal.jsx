@@ -118,7 +118,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
       }
     } catch (err) {
       console.error('Erreur sauvegarde prospect:', err)
-      toast.error('Erreur lors de la sauvegarde')
+      toast.error(`Erreur : ${err.message || 'Erreur lors de la sauvegarde'}`)
     }
   }
 
