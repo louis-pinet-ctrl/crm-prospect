@@ -73,7 +73,7 @@ export const DELAIS_RELANCE_PAR_STATUT = {
  */
 export function getDateRelanceParStatut(statut) {
   const delai = DELAIS_RELANCE_PAR_STATUT[statut]
-  if (!delai) return null
+  if (delai == null) return null
   const date = new Date()
   date.setDate(date.getDate() + delai)
   return date.toISOString().split('T')[0]
