@@ -104,7 +104,8 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
 
     if (validLeads.length === 0) {
       // Si rien trouvé, créer quand même un lead "brut" pour ne pas perdre l'info
-      const hasAnyData = leads.some(l => Object.keys(l).filter(k => !k.startsWith('_') && k !== 'statut' && k !== 'priorite' && k !== 'label' && k !== 'color').length > 0)
+      const profileKeys = new Set(['statut', 'priorite', 'label', 'color', 'type_dossier', 'intention', 'type_prescripteur', 'source', 'simulateur_valorisation'])
+      const hasAnyData = leads.some(l => Object.keys(l).filter(k => !k.startsWith('_') && !profileKeys.has(k)).length > 0)
       if (hasAnyData) {
         toast.error('Lead détecté mais incomplet (nom, email ou téléphone manquant). Vérifiez le texte collé.')
       } else {
