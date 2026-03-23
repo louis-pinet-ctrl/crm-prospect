@@ -82,7 +82,18 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
   const parseAndSetLeads = useCallback((text) => {
     if (!text.trim()) return
 
-    console.log('[Parse] Texte brut reçu (200 premiers chars):', text.slice(0, 200))
+    // Détecter le format JSON interne d'Outlook Web (drag depuis la liste d'emails)
+    const trimmed = text.trim()
+    if (trimmed.startsWith('{') && trimmed.includes('"itemType"')) {
+      try {
+        const outlook = JSON.parse(trimmed)
+        if (outlook.itemType === 'multimaillistmessagerows' || outlook.rowKeys) {
+          const count = outlook.rowKeys?.length || 0
+          toast.error(`${count} email${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''} depuis Outlook, mais seules les métadonnées sont transmises (pas le contenu). Ouvrez chaque email, sélectionnez tout le texte (Ctrl+A), puis collez-le ici.`)
+          return
+        }
+      } catch { /* pas du JSON valide, continuer normalement */ }
+    }
 
     const blocks = text
       .split(/(?=NOUVEAU LEAD VALORISATION)/)
@@ -274,11 +285,11 @@ export default function LeadsPage({ prospects, onSelectProspect, reload }) {
           .replace(/<\/div>/gi, '\n')
           .replace(/<\/tr>/gi, '\n')
           .replace(/<[^>]+>/g, '')
-          .replace(/&nbsp;/g, ' ')
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
+
+        // Décoder toutes les entités HTML via le décodeur natif du navigateur
+        const textarea = document.createElement('textarea')
+        textarea.innerHTML = cleanText
+        cleanText = textarea.value
       }
       setPasteText(prev => prev ? prev + '\n\n' + cleanText : cleanText)
       parseAndSetLeads(cleanText)
