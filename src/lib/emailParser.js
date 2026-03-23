@@ -2,6 +2,13 @@
 // Fonctionne avec des emails, signatures, corps de mail collés
 // Détecte aussi le format structuré "NOUVEAU LEAD VALORISATION" du simulateur
 
+// Emails à ignorer lors du parsing (expéditeur / destinataire système)
+const IGNORED_EMAILS = new Set([
+  'contact@louispinetavocat.fr',
+  'noreply@louispinetavocat.fr',
+  'no-reply@louispinetavocat.fr',
+])
+
 // --- Mapping segment simulateur → type_cuisine ---
 const SEGMENT_TO_CUISINE = {
   'fast-food': 'fast_food',
@@ -67,7 +74,9 @@ function parseSimulateurLead(text) {
   if (telMatch) result.telephone = telMatch[1].trim()
 
   const emailMatch = text.match(/Email\s*:\s*([\w.+-]+@[\w-]+\.[\w.-]+)/i)
-  if (emailMatch) result.email = emailMatch[1].trim().toLowerCase()
+  if (emailMatch && !IGNORED_EMAILS.has(emailMatch[1].trim().toLowerCase())) {
+    result.email = emailMatch[1].trim().toLowerCase()
+  }
 
   // Type utilisateur
   const typeMatch = text.match(/Type\s*:\s*(\S+)/i)
@@ -229,9 +238,16 @@ function parseSimulateurLead(text) {
 function parseGenericEmail(text) {
   const result = {}
 
-  // Email
-  const emailMatch = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/i)
-  if (emailMatch) result.email = emailMatch[0].toLowerCase()
+  // Email — trouver la première adresse qui n'est pas l'expéditeur système
+  const emailRegex = /[\w.+-]+@[\w-]+\.[\w.-]+/gi
+  let emailMatch
+  while ((emailMatch = emailRegex.exec(text)) !== null) {
+    const candidate = emailMatch[0].toLowerCase()
+    if (!IGNORED_EMAILS.has(candidate)) {
+      result.email = candidate
+      break
+    }
+  }
 
   // Téléphone (formats FR : 06, 07, +33, 01-09, avec espaces/points/tirets)
   const phoneMatch = text.match(
@@ -322,11 +338,23 @@ function parseGenericEmail(text) {
   return result
 }
 
+// --- Nettoyage des headers d'email Outlook/Gmail collés ---
+function stripEmailHeaders(text) {
+  // Retirer les lignes d'en-tête classiques qui contiennent une adresse email ou des métadonnées
+  // On cible uniquement les headers courts (De/From/To/Cc etc.) PAS "Date simulation" ou autres champs métier
+  return text.replace(
+    /^(?:De|From|À|To|Cc|Cci|Bcc|Objet|Subject|Envoyé|Sent|Importance)\s*:.*$/gim,
+    ''
+  ).trim()
+}
+
 // --- Point d'entrée principal ---
 export function parseEmailText(text) {
   // Détecter si c'est un email du simulateur de valorisation
   if (text.includes('NOUVEAU LEAD VALORISATION') || text.includes('VALORISATION CALCULÉE')) {
-    return parseSimulateurLead(text)
+    // Pour le simulateur, nettoyer les headers avant parsing pour éviter de capter l'expéditeur
+    const cleaned = stripEmailHeaders(text)
+    return parseSimulateurLead(cleaned)
   }
-  return parseGenericEmail(text)
+  return parseGenericEmail(stripEmailHeaders(text))
 }
