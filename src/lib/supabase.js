@@ -32,7 +32,11 @@ export async function createProspect(prospect) {
     .insert(prospect)
     .select()
     .single()
-  if (error) throw error
+  if (error) {
+    console.error('[Supabase createProspect] code:', error.code, 'message:', error.message, 'details:', error.details, 'hint:', error.hint)
+    console.error('[Supabase createProspect] données envoyées:', JSON.stringify(prospect, null, 2))
+    throw error
+  }
   return data
 }
 
@@ -43,7 +47,11 @@ export async function updateProspect(id, updates) {
     .eq('id', id)
     .select()
     .single()
-  if (error) throw error
+  if (error) {
+    console.error('[Supabase updateProspect] code:', error.code, 'message:', error.message, 'details:', error.details, 'hint:', error.hint)
+    console.error('[Supabase updateProspect] données envoyées:', JSON.stringify(updates, null, 2))
+    throw error
+  }
   return data
 }
 
