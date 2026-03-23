@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Phone, CalendarPlus, Download } from 'lucide-react'
+import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Phone, CalendarPlus, Download, Timer } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import ProspectSummary from './ProspectSummary'
@@ -23,6 +23,7 @@ import {
   SUIVI_STATUTS,
   INTENTIONS,
   isRelanceOverdue,
+  getDateRelanceParResultat,
 } from '../lib/constants'
 import { generateRelanceTemplates } from '../lib/relanceTemplates'
 
@@ -46,12 +47,14 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
   const [editing, setEditing] = useState(!prospect)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [scoreResult, setScoreResult] = useState(null)
+  const [prospectNotes, setProspectNotes] = useState([])
 
-  // Calculer le score quand on ouvre la fiche
+  // Calculer le score et charger les notes quand on ouvre la fiche
   useEffect(() => {
     if (!prospect?.id) return
     fetchNotes(prospect.id).then(notes => {
       setScoreResult(calculateScore(prospect, notes))
+      setProspectNotes(notes)
     }).catch(() => {})
   }, [prospect])
 
@@ -502,7 +505,31 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                         {new Date(prospect.date_relance).toLocaleDateString('fr-FR')}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
+                    {/* Snooze rapide */}
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <Timer size={12} className="text-text-secondary shrink-0" />
+                      <span className="text-xs text-text-secondary">Reporter :</span>
+                      {[
+                        { label: '+1j', days: 1 },
+                        { label: '+3j', days: 3 },
+                        { label: '+1sem', days: 7 },
+                      ].map(opt => (
+                        <button
+                          key={opt.days}
+                          onClick={async () => {
+                            const d = new Date()
+                            d.setDate(d.getDate() + opt.days)
+                            await onUpdate(prospect.id, { date_relance: d.toISOString().split('T')[0] })
+                            if (onReload) onReload()
+                          }}
+                          className="text-[11px] px-2 py-0.5 rounded bg-bg-card border border-border hover:border-primary hover:text-primary transition-colors"
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Calendrier */}
+                    <div className="flex items-center gap-2 mt-1.5">
                       <a
                         href={getGoogleCalUrl(prospect, prospect.date_relance)}
                         target="_blank"
@@ -537,7 +564,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
               <RelanceSuggestions prospect={prospect} onUpdate={onUpdate} onReload={onReload} />
 
               {/* Templates de relance */}
-              <RelanceTemplates prospect={prospect} onQuickAction={handleQuickAction} />
+              <RelanceTemplates prospect={prospect} onQuickAction={handleQuickAction} onUpdate={onUpdate} onReload={onReload} notes={prospectNotes} />
 
               {/* Facturation */}
               <FacturesSection prospectId={prospect.id} caEstime={prospect.ca_estime} />
@@ -561,12 +588,42 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
   )
 }
 
-function RelanceTemplates({ prospect, onQuickAction }) {
+// Détermine le prochain canal suggéré basé sur l'historique
+function getNextChannelSuggestion(notes) {
+  const SEQUENCE = ['email', 'whatsapp', 'appel']
+  // Trouver les dernières interactions de type relance
+  const recentRelances = (notes || [])
+    .filter(n => ['email', 'whatsapp', 'appel'].includes(n.type_note))
+    .slice(0, 5)
+
+  if (recentRelances.length === 0) return 'email'
+
+  const lastChannel = recentRelances[0]?.type_note
+  const lastIdx = SEQUENCE.indexOf(lastChannel)
+
+  // Si le dernier était un email sans réponse → WhatsApp
+  // Si le dernier était un WhatsApp sans réponse → Appel
+  // Sinon recommencer à email
+  if (recentRelances[0]?.resultat === 'pas_de_reponse' || recentRelances[0]?.resultat === 'message_laisse') {
+    return SEQUENCE[(lastIdx + 1) % SEQUENCE.length]
+  }
+
+  // Alternance simple : proposer un canal différent du dernier
+  return SEQUENCE[(lastIdx + 1) % SEQUENCE.length]
+}
+
+const CHANNEL_LABELS = { email: 'Email', whatsapp: 'WhatsApp', appel: 'Appel' }
+const CHANNEL_COLORS = { email: 'text-blue-400', whatsapp: 'text-green-400', appel: 'text-primary' }
+
+function RelanceTemplates({ prospect, onQuickAction, onUpdate, onReload, notes }) {
   const [showTemplates, setShowTemplates] = useState(false)
-  const [showPreview, setShowPreview] = useState(null) // 'email' | 'whatsapp' | null
+  const [showPreview, setShowPreview] = useState(null)
+  const [pendingResultat, setPendingResultat] = useState(null)
 
   const templates = generateRelanceTemplates(prospect)
   if (!templates) return null
+
+  const suggestedChannel = getNextChannelSuggestion(notes)
 
   const emailUrl = prospect.email
     ? `mailto:${prospect.email}?subject=${encodeURIComponent(templates.email.subject)}&body=${encodeURIComponent(templates.email.body)}`
@@ -584,6 +641,82 @@ function RelanceTemplates({ prospect, onQuickAction }) {
       })()
     : null
 
+  const handleSend = (channel) => {
+    if (channel === 'email') {
+      onQuickAction('email', emailUrl, false, `Objet : ${templates.email.subject}\n\n${templates.email.body}`)
+    } else {
+      onQuickAction('whatsapp', whatsappUrl, true, templates.whatsapp)
+    }
+    setShowTemplates(false)
+    setShowPreview(null)
+    setPendingResultat({ channel })
+  }
+
+  const handleResultat = async (resultat) => {
+    // Mettre à jour le résultat sur la dernière note (approximation : on replanifie directement)
+    const nextRelance = getDateRelanceParResultat(resultat)
+    const updates = {}
+    if (nextRelance) {
+      updates.date_relance = nextRelance
+    } else if (resultat === 'rdv_pris') {
+      // Pas de relance auto, on peut avancer le statut
+      if (prospect.statut === 'premier_contact' || prospect.statut === 'prospect_identifie') {
+        updates.statut = 'diagnostic_rdv'
+      }
+      updates.date_relance = null
+    } else if (resultat === 'refus') {
+      updates.date_relance = null
+    }
+
+    if (Object.keys(updates).length > 0) {
+      try {
+        await onUpdate(prospect.id, updates)
+        if (onReload) onReload()
+      } catch {
+        // handled upstream
+      }
+    }
+    setPendingResultat(null)
+  }
+
+  // Afficher le prompt de résultat post-envoi
+  if (pendingResultat) {
+    return (
+      <div className="border-t border-border pt-3">
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+          <p className="text-xs font-medium text-primary mb-2">
+            {pendingResultat.channel === 'email' ? 'Email' : 'WhatsApp'} envoyé — Quel résultat ?
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { value: 'pas_de_reponse', label: 'Pas de réponse', color: 'text-text-secondary' },
+              { value: 'message_laisse', label: 'Message laissé', color: 'text-yellow-400' },
+              { value: 'interesse', label: 'Intéressé', color: 'text-green-400' },
+              { value: 'a_rappeler', label: 'À rappeler', color: 'text-orange-400' },
+              { value: 'rdv_pris', label: 'RDV pris', color: 'text-primary' },
+              { value: 'refus', label: 'Refus', color: 'text-red-400' },
+              { value: 'info_envoyee', label: 'Info envoyée', color: 'text-blue-400' },
+            ].map(r => (
+              <button
+                key={r.value}
+                onClick={() => handleResultat(r.value)}
+                className={`text-[11px] px-2.5 py-1 rounded-full border border-border hover:border-primary transition-colors ${r.color}`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setPendingResultat(null)}
+            className="text-[10px] text-text-secondary mt-2 hover:text-text-primary transition-colors"
+          >
+            Ignorer
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="border-t border-border pt-3">
       <button
@@ -593,14 +726,34 @@ function RelanceTemplates({ prospect, onQuickAction }) {
         <Mail size={14} />
         Relancer avec un template
       </button>
+
+      {/* Séquence multi-canal */}
       {showTemplates && (
-        <div className="mt-2 space-y-2">
+        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-text-secondary mb-2">
+          <span>Séquence :</span>
+          {['email', 'whatsapp', 'appel'].map((ch, i) => (
+            <span key={ch} className="flex items-center gap-1">
+              {i > 0 && <span className="text-text-secondary/40">→</span>}
+              <span className={ch === suggestedChannel ? `font-bold ${CHANNEL_COLORS[ch]} underline` : ''}>
+                {CHANNEL_LABELS[ch]}
+              </span>
+            </span>
+          ))}
+          <span className="text-[10px] ml-1 text-text-secondary/60">(suggéré : {CHANNEL_LABELS[suggestedChannel]})</span>
+        </div>
+      )}
+
+      {showTemplates && (
+        <div className="space-y-2">
           {/* Email */}
           {emailUrl && (
-            <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg overflow-hidden">
+            <div className={`bg-blue-500/5 border border-blue-500/20 rounded-lg overflow-hidden ${suggestedChannel === 'email' ? 'ring-1 ring-blue-500/50' : ''}`}>
               <div className="flex items-center gap-2 px-3 py-2">
                 <Mail size={14} className="text-blue-400 shrink-0" />
                 <span className="text-sm text-blue-400 font-medium">Email</span>
+                {suggestedChannel === 'email' && (
+                  <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full">suggéré</span>
+                )}
                 <div className="ml-auto flex items-center gap-1.5">
                   <button
                     onClick={() => setShowPreview(showPreview === 'email' ? null : 'email')}
@@ -609,10 +762,7 @@ function RelanceTemplates({ prospect, onQuickAction }) {
                     {showPreview === 'email' ? 'Masquer' : 'Aperçu'}
                   </button>
                   <button
-                    onClick={() => {
-                      onQuickAction('email', emailUrl, false, `Objet : ${templates.email.subject}\n\n${templates.email.body}`)
-                      setShowTemplates(false)
-                    }}
+                    onClick={() => handleSend('email')}
                     className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors font-medium"
                   >
                     Envoyer
@@ -634,10 +784,13 @@ function RelanceTemplates({ prospect, onQuickAction }) {
 
           {/* WhatsApp */}
           {whatsappUrl && (
-            <div className="bg-green-500/5 border border-green-500/20 rounded-lg overflow-hidden">
+            <div className={`bg-green-500/5 border border-green-500/20 rounded-lg overflow-hidden ${suggestedChannel === 'whatsapp' ? 'ring-1 ring-green-500/50' : ''}`}>
               <div className="flex items-center gap-2 px-3 py-2">
                 <MessageCircle size={14} className="text-green-400 shrink-0" />
                 <span className="text-sm text-green-400 font-medium">WhatsApp</span>
+                {suggestedChannel === 'whatsapp' && (
+                  <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full">suggéré</span>
+                )}
                 <div className="ml-auto flex items-center gap-1.5">
                   <button
                     onClick={() => setShowPreview(showPreview === 'whatsapp' ? null : 'whatsapp')}
@@ -646,10 +799,7 @@ function RelanceTemplates({ prospect, onQuickAction }) {
                     {showPreview === 'whatsapp' ? 'Masquer' : 'Aperçu'}
                   </button>
                   <button
-                    onClick={() => {
-                      onQuickAction('whatsapp', whatsappUrl, true, templates.whatsapp)
-                      setShowTemplates(false)
-                    }}
+                    onClick={() => handleSend('whatsapp')}
                     className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors font-medium"
                   >
                     Envoyer
@@ -666,7 +816,32 @@ function RelanceTemplates({ prospect, onQuickAction }) {
             </div>
           )}
 
-          {!emailUrl && !whatsappUrl && (
+          {/* Appel */}
+          {prospect.telephone && (
+            <div className={`bg-primary/5 border border-primary/20 rounded-lg overflow-hidden ${suggestedChannel === 'appel' ? 'ring-1 ring-primary/50' : ''}`}>
+              <div className="flex items-center gap-2 px-3 py-2">
+                <Phone size={14} className="text-primary shrink-0" />
+                <span className="text-sm text-primary font-medium">Appel</span>
+                {suggestedChannel === 'appel' && (
+                  <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">suggéré</span>
+                )}
+                <div className="ml-auto">
+                  <button
+                    onClick={() => {
+                      onQuickAction('appel', `tel:${prospect.telephone}`)
+                      setShowTemplates(false)
+                      setPendingResultat({ channel: 'appel' })
+                    }}
+                    className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors font-medium"
+                  >
+                    Appeler
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!emailUrl && !whatsappUrl && !prospect.telephone && (
             <p className="text-xs text-text-secondary">
               Ajoutez un email ou téléphone pour utiliser les templates.
             </p>

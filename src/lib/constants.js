@@ -65,8 +65,36 @@ export const DELAIS_RELANCE_PAR_STATUT = {
  * Calcule la prochaine date de relance en fonction du statut.
  * Retourne une date ISO string (YYYY-MM-DD) ou null.
  */
+/**
+ * Calcule la prochaine date de relance en fonction du statut.
+ * Retourne une date ISO string (YYYY-MM-DD) ou null.
+ */
 export function getDateRelanceParStatut(statut) {
   const delai = DELAIS_RELANCE_PAR_STATUT[statut]
+  if (!delai) return null
+  const date = new Date()
+  date.setDate(date.getDate() + delai)
+  return date.toISOString().split('T')[0]
+}
+
+// Délais de replanification selon le résultat de la relance (en jours)
+// null = pas de replanification auto
+export const DELAIS_PAR_RESULTAT = {
+  pas_de_reponse: 7,       // Réessayer dans 1 semaine
+  message_laisse: 5,       // Suivi du message dans 5 jours
+  interesse: 3,            // Battre le fer tant qu'il est chaud
+  a_rappeler: 2,           // Rappel rapide
+  rdv_pris: null,          // RDV pris, pas de relance auto
+  refus: null,             // Refus, pas de relance
+  info_envoyee: 7,         // Suivi info dans 1 semaine
+}
+
+/**
+ * Calcule la prochaine date de relance selon le résultat d'une interaction.
+ * Retourne une date ISO string ou null si pas de replanification.
+ */
+export function getDateRelanceParResultat(resultat) {
+  const delai = DELAIS_PAR_RESULTAT[resultat]
   if (!delai) return null
   const date = new Date()
   date.setDate(date.getDate() + delai)

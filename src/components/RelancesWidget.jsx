@@ -1,7 +1,19 @@
 import { useState, useMemo } from 'react'
-import { Bell, ChevronDown, ChevronUp, AlertCircle, Clock, TrendingDown, CalendarPlus, Mail, MessageCircle } from 'lucide-react'
+import { Bell, ChevronDown, ChevronUp, AlertCircle, Clock, TrendingDown, CalendarPlus, Timer } from 'lucide-react'
 import { isRelanceOverdue, SEUIL_DORMANT_JOURS, getDateRelanceParStatut } from '../lib/constants'
 import { updateProspect } from '../lib/supabase'
+
+const SNOOZE_OPTIONS = [
+  { label: '+1j', days: 1 },
+  { label: '+3j', days: 3 },
+  { label: '+1sem', days: 7 },
+]
+
+function snoozeDate(days) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
 
 export default function RelancesWidget({ prospects, onSelectProspect, onReload }) {
   const [expanded, setExpanded] = useState(false)
@@ -66,30 +78,24 @@ export default function RelancesWidget({ prospects, onSelectProspect, onReload }
       </button>
 
       {expanded && (
-        <div className="border-t border-border max-h-48 overflow-y-auto">
+        <div className="border-t border-border max-h-64 overflow-y-auto">
           {relancesOverdue.map(p => (
-            <button
+            <RelanceItem
               key={p.id}
-              onClick={() => onSelectProspect(p)}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-bg-hover transition-colors text-left"
-            >
-              <AlertCircle size={12} className="text-danger shrink-0" />
-              <span className="text-text-primary truncate flex-1">{p.nom}</span>
-              <span className="text-danger text-xs shrink-0">
-                {new Date(p.date_relance).toLocaleDateString('fr-FR')}
-              </span>
-            </button>
+              prospect={p}
+              type="overdue"
+              onSelectProspect={onSelectProspect}
+              onReload={onReload}
+            />
           ))}
           {relancesToday.map(p => (
-            <button
+            <RelanceItem
               key={p.id}
-              onClick={() => onSelectProspect(p)}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-bg-hover transition-colors text-left"
-            >
-              <Clock size={12} className="text-warning shrink-0" />
-              <span className="text-text-primary truncate flex-1">{p.nom}</span>
-              <span className="text-warning text-xs shrink-0">Aujourd'hui</span>
-            </button>
+              prospect={p}
+              type="today"
+              onSelectProspect={onSelectProspect}
+              onReload={onReload}
+            />
           ))}
           {dormants.length > 0 && (
             <>
@@ -109,6 +115,70 @@ export default function RelancesWidget({ prospects, onSelectProspect, onReload }
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function RelanceItem({ prospect: p, type, onSelectProspect, onReload }) {
+  const [showSnooze, setShowSnooze] = useState(false)
+  const [snoozing, setSnoozing] = useState(false)
+
+  const isOverdue = type === 'overdue'
+  const colorClass = isOverdue ? 'text-danger' : 'text-warning'
+  const Icon = isOverdue ? AlertCircle : Clock
+
+  const handleSnooze = async (days, e) => {
+    e.stopPropagation()
+    setSnoozing(true)
+    try {
+      await updateProspect(p.id, { date_relance: snoozeDate(days) })
+      if (onReload) onReload()
+    } catch {
+      // silently fail
+    } finally {
+      setSnoozing(false)
+      setShowSnooze(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-bg-hover transition-colors group">
+      <button
+        onClick={() => onSelectProspect(p)}
+        className="flex items-center gap-2 flex-1 min-w-0 text-left"
+      >
+        <Icon size={12} className={`${colorClass} shrink-0`} />
+        <span className="text-text-primary truncate flex-1">{p.nom}</span>
+        <span className={`${colorClass} text-xs shrink-0`}>
+          {isOverdue ? new Date(p.date_relance).toLocaleDateString('fr-FR') : "Aujourd'hui"}
+        </span>
+      </button>
+
+      {/* Snooze toggle */}
+      <div className="relative shrink-0">
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowSnooze(!showSnooze) }}
+          className="p-1 rounded hover:bg-bg-main transition-colors opacity-0 group-hover:opacity-100"
+          title="Reporter"
+        >
+          <Timer size={13} className="text-text-secondary hover:text-primary" />
+        </button>
+
+        {showSnooze && (
+          <div className="absolute right-0 top-full mt-1 z-20 flex gap-1 bg-bg-card border border-border rounded-lg shadow-lg p-1.5">
+            {SNOOZE_OPTIONS.map(opt => (
+              <button
+                key={opt.days}
+                onClick={(e) => handleSnooze(opt.days, e)}
+                disabled={snoozing}
+                className="px-2 py-1 text-[11px] rounded bg-bg-main hover:bg-primary/20 hover:text-primary text-text-secondary transition-colors whitespace-nowrap"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
