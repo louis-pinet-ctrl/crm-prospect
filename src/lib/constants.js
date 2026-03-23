@@ -97,7 +97,7 @@ export const DELAIS_PAR_RESULTAT = {
  */
 export function getDateRelanceParResultat(resultat) {
   const delai = DELAIS_PAR_RESULTAT[resultat]
-  if (!delai) return null
+  if (delai == null) return null
   const date = new Date()
   date.setDate(date.getDate() + delai)
   return date.toISOString().split('T')[0]

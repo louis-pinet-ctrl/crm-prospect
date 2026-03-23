@@ -80,9 +80,17 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
       })
       await updateProspectAfterInteraction(prospect.id, type, new Date().toISOString())
       if (onReload) onReload()
+      // Feedback : confirmer la relance planifiée
+      const { DELAIS_RELANCE_PAR_STATUT } = await import('../lib/constants')
+      const delai = DELAIS_RELANCE_PAR_STATUT[prospect.statut]
+      if (delai != null) {
+        toast.success(`Interaction enregistrée — relance planifiée dans ${delai}j`)
+      } else {
+        toast.success('Interaction enregistrée')
+      }
     } catch (err) {
       console.error('Erreur création interaction rapide:', err)
-      toast.error('Erreur lors de l\'enregistrement de l\'interaction')
+      toast.error(`Erreur : ${err.message || 'Erreur lors de l\'enregistrement'}`)
     }
 
     // Ouvrir le lien
@@ -621,6 +629,7 @@ const CHANNEL_LABELS = { email: 'Email', whatsapp: 'WhatsApp', appel: 'Appel' }
 const CHANNEL_COLORS = { email: 'text-blue-400', whatsapp: 'text-green-400', appel: 'text-primary' }
 
 function RelanceTemplates({ prospect, onQuickAction, onUpdate, onReload, notes }) {
+  const toast = useToast()
   const [showTemplates, setShowTemplates] = useState(false)
   const [showPreview, setShowPreview] = useState(null)
   const [pendingResultat, setPendingResultat] = useState(null)
@@ -677,8 +686,16 @@ function RelanceTemplates({ prospect, onQuickAction, onUpdate, onReload, notes }
       try {
         await onUpdate(prospect.id, updates)
         if (onReload) onReload()
-      } catch {
-        // handled upstream
+        if (updates.date_relance) {
+          const d = new Date(updates.date_relance)
+          toast.success(`Relance planifiée le ${d.toLocaleDateString('fr-FR')}`)
+        } else if (updates.statut === 'diagnostic_rdv') {
+          toast.success('RDV pris — statut avancé en Diagnostic/RDV')
+        } else if (resultat === 'refus') {
+          toast.success('Refus noté — relance annulée')
+        }
+      } catch (err) {
+        toast.error(`Erreur : ${err.message || 'Erreur sauvegarde'}`)
       }
     }
     setPendingResultat(null)
