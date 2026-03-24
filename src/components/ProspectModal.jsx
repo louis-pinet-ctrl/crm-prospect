@@ -594,14 +594,13 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                 onSelectProspect={onSelectProspect}
                 onReload={onReload}
               />
-              </div>
 
               {/* Right column — Notes & interactions */}
               <div>
                 <NotesSection prospectId={prospect.id} onProspectUpdate={onReload} />
               </div>
 
-              </div>{/* end grid */}
+              </div>
             </>
           )}
         </div>
