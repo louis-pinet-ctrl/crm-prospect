@@ -230,24 +230,25 @@ function buildEmailBody(p) {
             lines.push('')
           }
 
-          // 2) Ce que je fais — des faits
+          // 2) Ce que je fais — des faits, centré sur la plus-value
           lines.push(
             `Je suis Louis Pinet, avocat spécialisé dans la cession de fonds de commerce en restauration. ` +
-            `Concrètement, j'accompagne des restaurateurs qui vendent ou achètent : rédaction de l'acte de cession, ` +
-            `audit du bail, séquestre, formalités — de l'estimation initiale jusqu'à la signature définitive.`
+            `Mon travail au quotidien, c'est d'auditer les baux commerciaux, d'identifier ce qui valorise ` +
+            `ou fragilise un fonds, et de rédiger des actes de cession qui protègent le vendeur — ` +
+            `notamment sur les garanties, les conditions suspensives et les clauses de non-concurrence.`
           )
           lines.push('')
 
           // 3) Proposition sans pression
           lines.push(
-            `Si vous êtes en réflexion sur une cession, je peux vous faire un retour gratuit de 10 minutes ` +
-            `sur votre estimation — ce qui la tire vers le haut, ce qui la fragilise, et les 2-3 choses ` +
-            `à anticiper juridiquement avant de vous lancer.`
+            `Si vous êtes en réflexion sur une cession, je peux vous faire un retour de 10 minutes ` +
+            `sur votre estimation — ce qui la tire vers le haut, ce qui la fragilise, et les points ` +
+            `du bail à vérifier avant de fixer un prix.`
           )
           lines.push('')
           lines.push(
-            `Pas de démarchage, pas d'engagement. L'idée c'est juste de vous donner de la visibilité ` +
-            `pour décider en connaissance de cause.`
+            `C'est gratuit et sans engagement. L'idée c'est simplement de vous donner de la visibilité ` +
+            `pour avancer en connaissance de cause.`
           )
 
         } else if (isInvestisseur) {
@@ -265,22 +266,22 @@ function buildEmailBody(p) {
           // 2) Faits concrets adaptés à un investisseur
           lines.push(
             `Je suis Louis Pinet, avocat spécialisé dans la cession de fonds de commerce en restauration. ` +
-            `J'accompagne régulièrement des acquéreurs sur la sécurisation de leurs opérations : ` +
-            `audit du bail et des contrats en cours, vérification des conformités (ERP, licence, extraction), ` +
-            `rédaction ou relecture de l'acte de cession, séquestre et formalités.`
+            `Côté acquéreur, mon travail c'est d'auditer le bail commercial (durée restante, destination, ` +
+            `charges, clauses de sortie), de vérifier les conformités qui impactent la valeur réelle du fonds ` +
+            `(ERP, licence, extraction), et de négocier un acte de cession avec les bonnes garanties.`
           )
           lines.push('')
 
           // 3) Proposition orientée investisseur
           lines.push(
-            `Si vous êtes en phase d'étude sur ce fonds ou sur d'autres opportunités, ` +
-            `je peux vous donner en 10 minutes un premier retour sur les points de vigilance juridiques ` +
-            `qui impactent la valorisation et le risque — bail, conformités, clauses à surveiller.`
+            `Si vous étudiez cette opportunité, je peux vous donner en 10 minutes un premier retour ` +
+            `sur les points qui impactent la valorisation et le risque — ce que le bail dit vraiment, ` +
+            `les conformités à vérifier, et ce qu'il faut négocier dans l'acte.`
           )
           lines.push('')
           lines.push(
             `C'est gratuit et sans engagement. L'objectif c'est de vous donner les éléments concrets ` +
-            `pour évaluer l'opération en connaissance de cause.`
+            `pour décider si l'opération tient la route.`
           )
 
         } else if (isEC) {
@@ -299,8 +300,8 @@ function buildEmailBody(p) {
           lines.push(
             `Je suis Louis Pinet, avocat spécialisé dans la cession de fonds de commerce en restauration. ` +
             `Je travaille régulièrement en binôme avec des experts-comptables sur ces dossiers : ` +
-            `pendant que vous sécurisez la partie financière et fiscale, j'interviens sur le bail, ` +
-            `l'acte de cession, le séquestre et les formalités juridiques.`
+            `pendant que vous sécurisez la partie financière et fiscale, j'interviens sur l'audit du bail, ` +
+            `la valorisation juridique du fonds, et la rédaction d'un acte de cession qui protège votre client.`
           )
           lines.push('')
 
@@ -330,9 +331,9 @@ function buildEmailBody(p) {
           // 2) Faits
           lines.push(
             `Je suis Louis Pinet, avocat spécialisé dans la cession de fonds de commerce en restauration. ` +
-            `J'interviens sur la partie juridique des cessions : audit du bail, rédaction de l'acte, ` +
-            `séquestre, conformités et formalités. Je travaille régulièrement en coordination ` +
-            `avec des ${roleLabel}s et d'autres intermédiaires sur ces dossiers.`
+            `J'interviens sur l'audit du bail commercial, la valorisation juridique du fonds, ` +
+            `et la rédaction de l'acte de cession. Je travaille régulièrement en coordination ` +
+            `avec des ${roleLabel}s sur ces dossiers.`
           )
           lines.push('')
 
@@ -514,7 +515,7 @@ function buildEmailBody(p) {
         `Comme nous en avons discuté, ${context} implique plusieurs étapes clés ` +
         `qu'il est important de sécuriser juridiquement` +
         (p.type_dossier === 'cession_fonds'
-          ? ` : vérification des clauses du bail, séquestre, rédaction de l'acte, formalités...`
+          ? ` : audit du bail, conformités, valorisation, rédaction de l'acte de cession...`
           : ` pour protéger vos intérêts.`)
       )
       lines.push('')
@@ -674,7 +675,7 @@ function buildWhatsApp(p) {
             `Bonjour ${prenom}, une simulation de valorisation a été réalisée via notre outil` +
             (p.simulateur_estimation ? ` (~${formatAmount(p.simulateur_estimation)})` : '') +
             `. Je suis Louis Pinet, avocat spécialisé en cession de restos. ` +
-            `Je travaille régulièrement avec des EC sur ces dossiers (bail, acte, séquestre). ` +
+            `Je travaille régulièrement avec des EC sur ces dossiers (bail, valorisation, acte de cession). ` +
             `Si votre client a un projet, je peux faire un point rapide de 10 min avec vous. Sans engagement.`
           )
         }
