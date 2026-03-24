@@ -137,7 +137,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative h-full w-full max-w-lg bg-bg-card border-l border-border overflow-y-auto">
+      <div className="relative h-full w-full bg-bg-card border-l border-border overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-bg-card border-b border-border px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-lg font-semibold text-text-primary">
@@ -207,8 +207,10 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
               {/* Score */}
               <ScoreBreakdown result={scoreResult} />
 
-              {/* Read-only view */}
-              <div className="space-y-4 mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* Left column — Info prospect */}
+              <div className="space-y-4">
                 <div className="flex flex-wrap gap-2 mb-4">
                   <span
                     className="text-xs font-medium px-2.5 py-1 rounded-full"
@@ -592,11 +594,14 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                 onSelectProspect={onSelectProspect}
                 onReload={onReload}
               />
+              </div>
 
-              {/* Notes section */}
-              <div className="border-t border-border pt-4">
+              {/* Right column — Notes & interactions */}
+              <div>
                 <NotesSection prospectId={prospect.id} onProspectUpdate={onReload} />
               </div>
+
+              </div>{/* end grid */}
             </>
           )}
         </div>
