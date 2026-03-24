@@ -13,7 +13,7 @@ import KanbanColumn from '../components/KanbanColumn'
 import KanbanCard from '../components/KanbanCard'
 import RelancesWidget from '../components/RelancesWidget'
 import PipelineSummary from '../components/PipelineSummary'
-import { STATUTS, TUNNELS, TYPES_DOSSIER, SOURCES, PRIORITES, SUIVI_STATUTS, getDateRelanceSuivi } from '../lib/constants'
+import { STATUTS, TUNNELS, TYPES_DOSSIER, SOURCES, PRIORITES, SUIVI_STATUTS, getDateRelanceSuivi, formatCurrency } from '../lib/constants'
 import { useToast } from '../components/Toast'
 
 export default function KanbanPage({
@@ -183,6 +183,12 @@ export default function KanbanPage({
     return tunnel.statuts.reduce((sum, s) => sum + (columnMap[s]?.length || 0), 0)
   }
 
+  const getTunnelCA = (tunnel) => {
+    return tunnel.statuts.reduce((sum, s) => {
+      return sum + (columnMap[s] || []).reduce((acc, p) => acc + (p.ca_estime || 0), 0)
+    }, 0)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -305,6 +311,7 @@ export default function KanbanPage({
             {TUNNELS.map(tunnel => {
               const isCollapsed = collapsedTunnels[tunnel.id]
               const count = getTunnelCount(tunnel)
+              const tunnelCA = getTunnelCA(tunnel)
               const tunnelStatuts = STATUTS.filter(s => tunnel.statuts.includes(s.value))
 
               return (
@@ -328,14 +335,27 @@ export default function KanbanPage({
                     <span className="text-xs text-text-secondary">
                       {tunnel.description}
                     </span>
-                    <span
-                      className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: tunnel.color + '20',
-                        color: tunnel.color,
-                      }}
-                    >
-                      {count} prospect{count !== 1 ? 's' : ''}
+                    <span className="ml-auto flex items-center gap-2">
+                      {tunnel.id === 'closing' && tunnelCA > 0 && (
+                        <span
+                          className="text-xs font-medium px-2 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: tunnel.color + '10',
+                            color: tunnel.color,
+                          }}
+                        >
+                          {formatCurrency(tunnelCA)}
+                        </span>
+                      )}
+                      <span
+                        className="text-xs font-medium px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: tunnel.color + '20',
+                          color: tunnel.color,
+                        }}
+                      >
+                        {count} prospect{count !== 1 ? 's' : ''}
+                      </span>
                     </span>
                   </button>
 
