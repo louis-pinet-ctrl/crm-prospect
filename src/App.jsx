@@ -285,9 +285,13 @@ export default function App() {
       {/* Prospect detail modal */}
       {selectedProspect && (
         <ProspectModal
-          prospect={selectedProspect}
+          prospect={prospectData.prospects.find(p => p.id === selectedProspect.id) || selectedProspect}
           onClose={() => setSelectedProspect(null)}
-          onUpdate={prospectData.update}
+          onUpdate={async (id, data) => {
+            const updated = await prospectData.update(id, data)
+            setSelectedProspect(updated)
+            return updated
+          }}
           onDelete={async (id) => {
             try {
               await prospectData.remove(id)
