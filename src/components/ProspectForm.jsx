@@ -55,6 +55,8 @@ const defaultValues = {
   forme_juridique: '',
   date_creation_entreprise: '',
   etat_administratif: '',
+  dirigeants_sirene: '',
+  resultat_net_sirene: null,
   // Franchise
   est_franchise: false,
   enseigne_franchise: '',
@@ -237,6 +239,10 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         forme_juridique: info.forme_juridique || prev.forme_juridique || '',
         date_creation_entreprise: info.date_creation_entreprise || prev.date_creation_entreprise || '',
         etat_administratif: info.etat_administratif || prev.etat_administratif || '',
+        dirigeants_sirene: info.dirigeants?.length > 0
+          ? info.dirigeants.map(d => `${d.nom} (${d.qualite})`).join(', ')
+          : prev.dirigeants_sirene || '',
+        resultat_net_sirene: info.resultat_net ?? prev.resultat_net_sirene ?? null,
       }))
       setPappersSuccess(true)
       setTimeout(() => setPappersSuccess(false), 3000)
@@ -278,6 +284,8 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     if (!data.forme_juridique) data.forme_juridique = null
     if (!data.date_creation_entreprise) data.date_creation_entreprise = null
     if (!data.etat_administratif) data.etat_administratif = null
+    if (!data.dirigeants_sirene) data.dirigeants_sirene = null
+    if (data.resultat_net_sirene === '' || data.resultat_net_sirene === null) data.resultat_net_sirene = null
     // Numeric fields: empty string → null
     if (data.simulateur_estimation === '' || data.simulateur_estimation === null) data.simulateur_estimation = null
     if (data.nombre_salaries === '' || data.nombre_salaries === null) data.nombre_salaries = null

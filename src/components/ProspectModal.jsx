@@ -418,6 +418,20 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                         </p>
                       </div>
                     )}
+                    {prospect.dirigeants_sirene && (
+                      <div className="col-span-2">
+                        <span className="text-text-secondary text-xs">Dirigeant(s)</span>
+                        <p className="text-text-primary">{prospect.dirigeants_sirene}</p>
+                      </div>
+                    )}
+                    {prospect.resultat_net_sirene != null && (
+                      <div>
+                        <span className="text-text-secondary text-xs">Résultat net</span>
+                        <p className={`font-medium ${prospect.resultat_net_sirene >= 0 ? 'text-success' : 'text-danger'}`}>
+                          {formatCurrency(prospect.resultat_net_sirene)}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

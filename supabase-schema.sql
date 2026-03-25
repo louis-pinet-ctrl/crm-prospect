@@ -82,6 +82,8 @@ CREATE TABLE prospects (
   forme_juridique TEXT,
   date_creation_entreprise DATE,
   etat_administratif TEXT,
+  dirigeants_sirene TEXT,
+  resultat_net_sirene NUMERIC,
   -- Expert comptable
   a_expert_comptable BOOLEAN DEFAULT FALSE,
   nom_expert_comptable TEXT,
