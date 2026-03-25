@@ -48,6 +48,13 @@ const defaultValues = {
   nombre_salaries: null,
   siret: '',
   ca_annuel_declare: null,
+  adresse_sirene: '',
+  code_postal: '',
+  code_naf: '',
+  libelle_naf: '',
+  forme_juridique: '',
+  date_creation_entreprise: '',
+  etat_administratif: '',
   // Franchise
   est_franchise: false,
   enseigne_franchise: '',
@@ -264,6 +271,13 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     if (!data.diaglocal_notes) data.diaglocal_notes = null
     if (!data.siret) data.siret = null
     if (!data.nom_expert_comptable) data.nom_expert_comptable = null
+    if (!data.adresse_sirene) data.adresse_sirene = null
+    if (!data.code_postal) data.code_postal = null
+    if (!data.code_naf) data.code_naf = null
+    if (!data.libelle_naf) data.libelle_naf = null
+    if (!data.forme_juridique) data.forme_juridique = null
+    if (!data.date_creation_entreprise) data.date_creation_entreprise = null
+    if (!data.etat_administratif) data.etat_administratif = null
     // Numeric fields: empty string → null
     if (data.simulateur_estimation === '' || data.simulateur_estimation === null) data.simulateur_estimation = null
     if (data.nombre_salaries === '' || data.nombre_salaries === null) data.nombre_salaries = null
