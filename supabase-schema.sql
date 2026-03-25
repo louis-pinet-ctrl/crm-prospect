@@ -75,6 +75,13 @@ CREATE TABLE prospects (
   nombre_salaries INTEGER,
   siret TEXT,
   ca_annuel_declare NUMERIC,
+  adresse_sirene TEXT,
+  code_postal TEXT,
+  code_naf TEXT,
+  libelle_naf TEXT,
+  forme_juridique TEXT,
+  date_creation_entreprise DATE,
+  etat_administratif TEXT,
   -- Expert comptable
   a_expert_comptable BOOLEAN DEFAULT FALSE,
   nom_expert_comptable TEXT,

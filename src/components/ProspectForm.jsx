@@ -223,6 +223,13 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         ca_annuel_declare: info.ca_annuel_declare ?? prev.ca_annuel_declare,
         nombre_salaries: info.nombre_salaries ?? prev.nombre_salaries,
         ville: info.ville || prev.ville,
+        adresse_sirene: info.adresse || prev.adresse_sirene || '',
+        code_postal: info.code_postal || prev.code_postal || '',
+        code_naf: info.code_naf || prev.code_naf || '',
+        libelle_naf: info.libelle_naf || prev.libelle_naf || '',
+        forme_juridique: info.libelle_nature_juridique || prev.forme_juridique || '',
+        date_creation_entreprise: info.date_creation_entreprise || prev.date_creation_entreprise || '',
+        etat_administratif: info.etat_administratif || prev.etat_administratif || '',
       }))
       setPappersSuccess(true)
       setTimeout(() => setPappersSuccess(false), 3000)

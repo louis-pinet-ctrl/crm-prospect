@@ -381,6 +381,43 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                         <p className="text-text-primary font-medium">{formatCurrency(prospect.ca_annuel_declare)}</p>
                       </div>
                     )}
+                    {prospect.forme_juridique && (
+                      <div>
+                        <span className="text-text-secondary text-xs">Forme juridique</span>
+                        <p className="text-text-primary">{prospect.forme_juridique}</p>
+                      </div>
+                    )}
+                    {prospect.code_naf && (
+                      <div>
+                        <span className="text-text-secondary text-xs">Activité (NAF)</span>
+                        <p className="text-text-primary">{prospect.libelle_naf || prospect.code_naf}</p>
+                        {prospect.libelle_naf && <p className="text-text-secondary text-[10px]">{prospect.code_naf}</p>}
+                      </div>
+                    )}
+                    {prospect.adresse_sirene && (
+                      <div>
+                        <span className="text-text-secondary text-xs">Adresse (SIRENE)</span>
+                        <p className="text-text-primary">
+                          {prospect.adresse_sirene}
+                          {prospect.code_postal && `, ${prospect.code_postal}`}
+                          {prospect.ville && ` ${prospect.ville}`}
+                        </p>
+                      </div>
+                    )}
+                    {prospect.date_creation_entreprise && (
+                      <div>
+                        <span className="text-text-secondary text-xs">Création entreprise</span>
+                        <p className="text-text-primary">{new Date(prospect.date_creation_entreprise).toLocaleDateString('fr-FR')}</p>
+                      </div>
+                    )}
+                    {prospect.etat_administratif && (
+                      <div>
+                        <span className="text-text-secondary text-xs">État</span>
+                        <p className={`font-medium ${prospect.etat_administratif === 'A' ? 'text-success' : 'text-danger'}`}>
+                          {prospect.etat_administratif === 'A' ? 'Active' : 'Fermée'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
