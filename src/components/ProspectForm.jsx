@@ -226,24 +226,38 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     setPappersSuccess(false)
     try {
       const info = await fetchCompanyBySiret(form.siret)
-      setForm(prev => ({
-        ...prev,
-        etablissement: info.etablissement || prev.etablissement,
-        ca_annuel_declare: info.ca_annuel_declare ?? prev.ca_annuel_declare,
-        nombre_salaries: info.nombre_salaries ?? prev.nombre_salaries,
-        ville: info.ville || prev.ville,
-        adresse_sirene: info.adresse || prev.adresse_sirene || '',
-        code_postal: info.code_postal || prev.code_postal || '',
-        code_naf: info.code_naf || prev.code_naf || '',
-        libelle_naf: info.libelle_naf || prev.libelle_naf || '',
-        forme_juridique: info.forme_juridique || prev.forme_juridique || '',
-        date_creation_entreprise: info.date_creation_entreprise || prev.date_creation_entreprise || '',
-        etat_administratif: info.etat_administratif || prev.etat_administratif || '',
-        dirigeants_sirene: info.dirigeants?.length > 0
-          ? info.dirigeants.map(d => `${d.nom} (${d.qualite})`).join(', ')
-          : prev.dirigeants_sirene || '',
-        resultat_net_sirene: info.resultat_net ?? prev.resultat_net_sirene ?? null,
-      }))
+      console.log('[SIRENE] Données parsées:', JSON.stringify(info, null, 2))
+      setForm(prev => {
+        const next = {
+          ...prev,
+          etablissement: info.etablissement || prev.etablissement,
+          ca_annuel_declare: info.ca_annuel_declare ?? prev.ca_annuel_declare,
+          nombre_salaries: info.nombre_salaries ?? prev.nombre_salaries,
+          ville: info.ville || prev.ville,
+          adresse_sirene: info.adresse || prev.adresse_sirene || '',
+          code_postal: info.code_postal || prev.code_postal || '',
+          code_naf: info.code_naf || prev.code_naf || '',
+          libelle_naf: info.libelle_naf || prev.libelle_naf || '',
+          forme_juridique: info.forme_juridique || prev.forme_juridique || '',
+          date_creation_entreprise: info.date_creation_entreprise || prev.date_creation_entreprise || '',
+          etat_administratif: info.etat_administratif || prev.etat_administratif || '',
+          dirigeants_sirene: info.dirigeants?.length > 0
+            ? info.dirigeants.map(d => `${d.nom} (${d.qualite})`).join(', ')
+            : prev.dirigeants_sirene || '',
+          resultat_net_sirene: info.resultat_net ?? prev.resultat_net_sirene ?? null,
+        }
+        console.log('[SIRENE] Form après merge:', JSON.stringify({
+          adresse_sirene: next.adresse_sirene,
+          code_naf: next.code_naf,
+          libelle_naf: next.libelle_naf,
+          forme_juridique: next.forme_juridique,
+          date_creation_entreprise: next.date_creation_entreprise,
+          etat_administratif: next.etat_administratif,
+          dirigeants_sirene: next.dirigeants_sirene,
+          resultat_net_sirene: next.resultat_net_sirene,
+        }, null, 2))
+        return next
+      })
       setPappersSuccess(true)
       setTimeout(() => setPappersSuccess(false), 3000)
     } catch (err) {
