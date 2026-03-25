@@ -201,16 +201,6 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
             />
           ) : (
             <>
-              {console.log('[MODAL] Prospect SIRENE fields:', JSON.stringify({
-                forme_juridique: prospect.forme_juridique,
-                code_naf: prospect.code_naf,
-                libelle_naf: prospect.libelle_naf,
-                adresse_sirene: prospect.adresse_sirene,
-                etat_administratif: prospect.etat_administratif,
-                dirigeants_sirene: prospect.dirigeants_sirene,
-                date_creation_entreprise: prospect.date_creation_entreprise,
-                resultat_net_sirene: prospect.resultat_net_sirene,
-              }, null, 2))}
               {/* AI-like summary */}
               <ProspectSummary prospect={prospect} />
 

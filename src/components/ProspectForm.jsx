@@ -226,38 +226,24 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
     setPappersSuccess(false)
     try {
       const info = await fetchCompanyBySiret(form.siret)
-      console.log('[SIRENE] Données parsées:', JSON.stringify(info, null, 2))
-      setForm(prev => {
-        const next = {
-          ...prev,
-          etablissement: info.etablissement || prev.etablissement,
-          ca_annuel_declare: info.ca_annuel_declare ?? prev.ca_annuel_declare,
-          nombre_salaries: info.nombre_salaries ?? prev.nombre_salaries,
-          ville: info.ville || prev.ville,
-          adresse_sirene: info.adresse || prev.adresse_sirene || '',
-          code_postal: info.code_postal || prev.code_postal || '',
-          code_naf: info.code_naf || prev.code_naf || '',
-          libelle_naf: info.libelle_naf || prev.libelle_naf || '',
-          forme_juridique: info.forme_juridique || prev.forme_juridique || '',
-          date_creation_entreprise: info.date_creation_entreprise || prev.date_creation_entreprise || '',
-          etat_administratif: info.etat_administratif || prev.etat_administratif || '',
-          dirigeants_sirene: info.dirigeants?.length > 0
-            ? info.dirigeants.map(d => `${d.nom} (${d.qualite})`).join(', ')
-            : prev.dirigeants_sirene || '',
-          resultat_net_sirene: info.resultat_net ?? prev.resultat_net_sirene ?? null,
-        }
-        console.log('[SIRENE] Form après merge:', JSON.stringify({
-          adresse_sirene: next.adresse_sirene,
-          code_naf: next.code_naf,
-          libelle_naf: next.libelle_naf,
-          forme_juridique: next.forme_juridique,
-          date_creation_entreprise: next.date_creation_entreprise,
-          etat_administratif: next.etat_administratif,
-          dirigeants_sirene: next.dirigeants_sirene,
-          resultat_net_sirene: next.resultat_net_sirene,
-        }, null, 2))
-        return next
-      })
+      setForm(prev => ({
+        ...prev,
+        etablissement: info.etablissement || prev.etablissement,
+        ca_annuel_declare: info.ca_annuel_declare ?? prev.ca_annuel_declare,
+        nombre_salaries: info.nombre_salaries ?? prev.nombre_salaries,
+        ville: info.ville || prev.ville,
+        adresse_sirene: info.adresse || prev.adresse_sirene || '',
+        code_postal: info.code_postal || prev.code_postal || '',
+        code_naf: info.code_naf || prev.code_naf || '',
+        libelle_naf: info.libelle_naf || prev.libelle_naf || '',
+        forme_juridique: info.forme_juridique || prev.forme_juridique || '',
+        date_creation_entreprise: info.date_creation_entreprise || prev.date_creation_entreprise || '',
+        etat_administratif: info.etat_administratif || prev.etat_administratif || '',
+        dirigeants_sirene: info.dirigeants?.length > 0
+          ? info.dirigeants.map(d => `${d.nom} (${d.qualite})`).join(', ')
+          : prev.dirigeants_sirene || '',
+        resultat_net_sirene: info.resultat_net ?? prev.resultat_net_sirene ?? null,
+      }))
       setPappersSuccess(true)
       setTimeout(() => setPappersSuccess(false), 3000)
     } catch (err) {
@@ -673,7 +659,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
               <p className="text-danger text-xs mt-1">{pappersError}</p>
             )}
             {pappersSuccess && (
-              <p className="text-success text-xs mt-1">Données Pappers importées</p>
+              <p className="text-success text-xs mt-1">Données SIRENE importées</p>
             )}
           </div>
           <div>
@@ -688,6 +674,39 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
             />
           </div>
         </div>
+
+        {/* Encadré récapitulatif SIRENE */}
+        {(form.forme_juridique || form.code_naf || form.adresse_sirene || form.dirigeants_sirene || form.etat_administratif) && (
+          <div className="mt-3 bg-bg-main/50 border border-border rounded-lg p-3">
+            <p className="text-xs font-medium text-text-secondary mb-2">Données SIRENE importées</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              {form.forme_juridique && (
+                <div><span className="text-text-secondary">Forme juridique : </span><span className="text-text-primary">{form.forme_juridique}</span></div>
+              )}
+              {form.code_naf && (
+                <div><span className="text-text-secondary">Activité : </span><span className="text-text-primary">{form.libelle_naf || form.code_naf}</span></div>
+              )}
+              {form.adresse_sirene && (
+                <div className="col-span-2"><span className="text-text-secondary">Adresse : </span><span className="text-text-primary">{form.adresse_sirene}</span></div>
+              )}
+              {form.date_creation_entreprise && (
+                <div><span className="text-text-secondary">Création : </span><span className="text-text-primary">{new Date(form.date_creation_entreprise).toLocaleDateString('fr-FR')}</span></div>
+              )}
+              {form.etat_administratif && (
+                <div><span className="text-text-secondary">État : </span><span className={form.etat_administratif === 'A' ? 'text-success' : 'text-danger'}>{form.etat_administratif === 'A' ? 'Active' : 'Fermée'}</span></div>
+              )}
+              {form.dirigeants_sirene && (
+                <div className="col-span-2"><span className="text-text-secondary">Dirigeant(s) : </span><span className="text-text-primary">{form.dirigeants_sirene}</span></div>
+              )}
+              {form.ca_annuel_declare != null && form.ca_annuel_declare !== '' && (
+                <div><span className="text-text-secondary">CA : </span><span className="text-text-primary">{Number(form.ca_annuel_declare).toLocaleString('fr-FR')} €</span></div>
+              )}
+              {form.resultat_net_sirene != null && (
+                <div><span className="text-text-secondary">Résultat net : </span><span className={form.resultat_net_sirene >= 0 ? 'text-success' : 'text-danger'}>{Number(form.resultat_net_sirene).toLocaleString('fr-FR')} €</span></div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* --- Expert Comptable --- */}
