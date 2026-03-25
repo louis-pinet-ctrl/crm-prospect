@@ -8,10 +8,13 @@ export default function PipelineSummary({ prospects }) {
       'relance_en_attente', 'lettre_mission_envoyee', 'mission_en_cours'])
     const closingStatuts = new Set(['relance_en_attente', 'lettre_mission_envoyee', 'mission_en_cours'])
 
+    const enCoursStatuts = new Set(['mission_en_cours'])
+
     let totalActive = 0
-    let pipelineValue = 0
     let closingValue = 0
     let closingCount = 0
+    let enCoursCount = 0
+    let enCoursValue = 0
     const tunnelCounts = {}
 
     TUNNELS.forEach(t => { tunnelCounts[t.id] = 0 })
@@ -23,22 +26,31 @@ export default function PipelineSummary({ prospects }) {
 
       if (activeStatuts.has(p.statut)) {
         totalActive++
-        pipelineValue += p.ca_estime || 0
       }
       if (closingStatuts.has(p.statut)) {
         closingCount++
         closingValue += p.ca_estime || 0
       }
+      if (enCoursStatuts.has(p.statut)) {
+        enCoursCount++
+        enCoursValue += p.ca_estime || 0
+      }
     })
 
-    return { totalActive, pipelineValue, closingCount, closingValue, tunnelCounts }
+    return { totalActive, closingCount, closingValue, enCoursCount, enCoursValue, tunnelCounts }
   }, [prospects])
 
   const objectifMax = CA_OBJECTIFS[CA_OBJECTIFS.length - 1].amount
-  const pctPipeline = objectifMax > 0 ? Math.min(100, Math.round((stats.pipelineValue / objectifMax) * 100)) : 0
   const pctClosing = objectifMax > 0 ? Math.min(100, Math.round((stats.closingValue / objectifMax) * 100)) : 0
 
   const cards = [
+    {
+      icon: Briefcase,
+      label: 'En cours',
+      value: stats.enCoursCount,
+      sub: formatCurrency(stats.enCoursValue),
+      color: 'text-success',
+    },
     {
       icon: Users,
       label: 'Actifs',
@@ -47,14 +59,6 @@ export default function PipelineSummary({ prospects }) {
     },
     {
       icon: TrendingUp,
-      label: 'Pipe total',
-      value: formatCurrency(stats.pipelineValue),
-      color: 'text-success',
-      pct: pctPipeline,
-      barColor: '#4dff88',
-    },
-    {
-      icon: Briefcase,
       label: 'En closing',
       value: stats.closingCount,
       sub: formatCurrency(stats.closingValue),
