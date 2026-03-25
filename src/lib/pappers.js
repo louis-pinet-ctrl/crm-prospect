@@ -23,41 +23,62 @@ export async function fetchCompanyBySiret(siret) {
   const company = data.results[0]
   const siege = company.siege || {}
 
-  // Adresse complète
+  // Debug: log pour voir tous les champs disponibles
+  console.log('[SIRENE] Réponse complète:', JSON.stringify(company, null, 2))
+
+  // Adresse : l'API peut retourner soit un champ `adresse` complet, soit les composants séparés
+  const adresseComplete = siege.adresse || ''
   const adresseParts = [
     siege.numero_voie,
     siege.type_voie,
     siege.libelle_voie,
   ].filter(Boolean)
-  const adresse = adresseParts.length > 0 ? adresseParts.join(' ') : ''
+  const adresse = adresseComplete || (adresseParts.length > 0 ? adresseParts.join(' ') : '')
   const code_postal = siege.code_postal || ''
 
-  // Activité (NAF)
-  const code_naf = siege.activite_principale || company.activite_principale || ''
-  const libelle_naf = siege.libelle_activite_principale || company.libelle_activite_principale || ''
+  // Activité (NAF) — plusieurs noms possibles selon la version de l'API
+  const code_naf = siege.activite_principale
+    || company.activite_principale
+    || company.naf_entreprise
+    || ''
+  const libelle_naf = siege.libelle_activite_principale
+    || company.libelle_activite_principale
+    || company.libelle_naf_entreprise
+    || ''
 
-  // Forme juridique
-  const nature_juridique = company.nature_juridique || ''
-  const libelle_nature_juridique = company.libelle_nature_juridique || ''
+  // Forme juridique — code + libellé
+  const forme_juridique = company.libelle_nature_juridique
+    || company.forme_juridique
+    || company.categorie_juridique
+    || ''
+  const nature_juridique_code = company.nature_juridique
+    || company.forme_juridique_code
+    || ''
 
   // Date de création
-  const date_creation_entreprise = company.date_creation || ''
+  const date_creation_entreprise = company.date_creation
+    || siege.date_creation
+    || ''
 
   // État administratif
-  const etat_administratif = company.etat_administratif || siege.etat_administratif || ''
+  const etat_administratif = company.etat_administratif
+    || siege.etat_administratif
+    || ''
 
   return {
     etablissement: company.nom_complet || company.nom_raison_sociale || '',
     ville: siege.libelle_commune || siege.commune || '',
-    nombre_salaries: parseTrancheEffectif(company.tranche_effectif_salarie),
+    nombre_salaries: parseTrancheEffectif(
+      company.tranche_effectif_salarie || siege.tranche_effectif_salarie
+    ),
     ca_annuel_declare: null,
-    // Nouveaux champs SIRENE
+    // Champs SIRENE enrichis
     adresse,
     code_postal,
     code_naf,
     libelle_naf,
-    nature_juridique,
-    libelle_nature_juridique,
+    forme_juridique,
+    nature_juridique_code,
     date_creation_entreprise,
     etat_administratif,
   }

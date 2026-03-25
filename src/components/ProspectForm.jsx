@@ -234,7 +234,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         code_postal: info.code_postal || prev.code_postal || '',
         code_naf: info.code_naf || prev.code_naf || '',
         libelle_naf: info.libelle_naf || prev.libelle_naf || '',
-        forme_juridique: info.libelle_nature_juridique || prev.forme_juridique || '',
+        forme_juridique: info.forme_juridique || prev.forme_juridique || '',
         date_creation_entreprise: info.date_creation_entreprise || prev.date_creation_entreprise || '',
         etat_administratif: info.etat_administratif || prev.etat_administratif || '',
       }))
