@@ -397,11 +397,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                     {prospect.adresse_sirene && (
                       <div>
                         <span className="text-text-secondary text-xs">Adresse (SIRENE)</span>
-                        <p className="text-text-primary">
-                          {prospect.adresse_sirene}
-                          {prospect.code_postal && `, ${prospect.code_postal}`}
-                          {prospect.ville && ` ${prospect.ville}`}
-                        </p>
+                        <p className="text-text-primary">{prospect.adresse_sirene}</p>
                       </div>
                     )}
                     {prospect.date_creation_entreprise && (
