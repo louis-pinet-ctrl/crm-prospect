@@ -1021,7 +1021,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
         <div className={sectionClass}>
           <h4 className={sectionTitle}>Prescripteur & Suivi long terme</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {form.statut === 'prescripteur' && (
+            {['prescripteur', 'prescripteur_a_activer'].includes(form.statut) && (
               <>
                 <div>
                   <label className={labelClass}>Type de prescripteur</label>

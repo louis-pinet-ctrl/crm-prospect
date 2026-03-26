@@ -17,10 +17,10 @@ const TYPE_PROFILES = {
   'exploitant': { statut: 'lead_simulateur', priorite: 'haute', intention: 'cedant', type_dossier: 'cession_fonds', label: 'Prospect cédant', color: 'text-primary' },
   'restaurateur/exploitant': { statut: 'lead_simulateur', priorite: 'haute', intention: 'cedant', type_dossier: 'cession_fonds', label: 'Prospect cédant', color: 'text-primary' },
   'franchisé': { statut: 'lead_simulateur', priorite: 'haute', intention: 'cedant', type_dossier: 'franchise', label: 'Franchisé cédant', color: 'text-pink-400' },
-  'expert-comptable': { statut: 'prescripteur', priorite: 'moyenne', type_prescripteur: 'expert_comptable', type_dossier: 'cession_fonds', label: 'Prescripteur EC', color: 'text-green-400' },
-  'agent immobilier': { statut: 'prescripteur', priorite: 'moyenne', type_prescripteur: 'agent_immobilier', type_dossier: 'cession_fonds', label: 'Prescripteur Immo', color: 'text-green-400' },
+  'expert-comptable': { statut: 'prescripteur_a_activer', priorite: 'moyenne', type_prescripteur: 'expert_comptable', type_dossier: 'cession_fonds', label: 'Prescripteur EC', color: 'text-green-400' },
+  'agent immobilier': { statut: 'prescripteur_a_activer', priorite: 'moyenne', type_prescripteur: 'agent_immobilier', type_dossier: 'cession_fonds', label: 'Prescripteur Immo', color: 'text-green-400' },
   'avocat': { statut: 'lead_simulateur', priorite: 'moyenne', type_dossier: 'cession_fonds', label: 'Avocat', color: 'text-blue-400' },
-  'conseiller': { statut: 'prescripteur', priorite: 'moyenne', type_prescripteur: 'autre', type_dossier: 'cession_fonds', label: 'Prescripteur', color: 'text-green-400' },
+  'conseiller': { statut: 'prescripteur_a_activer', priorite: 'moyenne', type_prescripteur: 'autre', type_dossier: 'cession_fonds', label: 'Prescripteur', color: 'text-green-400' },
   'investisseur': { statut: 'lead_simulateur', priorite: 'haute', intention: 'acquereur', type_dossier: 'cession_fonds', label: 'Investisseur', color: 'text-purple-400' },
 }
 

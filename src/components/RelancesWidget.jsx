@@ -32,7 +32,7 @@ export default function RelancesWidget({ prospects, onSelectProspect, onReload }
   const dormants = useMemo(() => {
     const seuil = new Date(now.getTime() - SEUIL_DORMANT_JOURS * 24 * 60 * 60 * 1000)
     return prospects.filter(p => {
-      if (['cloture', 'perdu_refuse', 'facture', 'prescripteur'].includes(p.statut)) return false
+      if (['cloture', 'perdu_refuse', 'facture', 'prescripteur', 'prescripteur_a_activer'].includes(p.statut)) return false
       const last = p.date_derniere_interaction
         ? new Date(p.date_derniere_interaction)
         : p.date_creation ? new Date(p.date_creation) : null

@@ -7,8 +7,10 @@ import {
   formatCurrency,
   getTypeDossierColor,
   getTypeDossierLabel,
+  getTypePrescripteurLabel,
   isRelanceOverdue,
   SUIVI_STATUTS,
+  PRESCRIPTEUR_STATUTS,
   INTENTIONS,
   TYPES_CUISINE,
 } from '../lib/constants'
@@ -31,6 +33,7 @@ export default function KanbanCard({ prospect, onClick }) {
 
   const overdue = isRelanceOverdue(prospect.date_relance)
   const isSuivi = SUIVI_STATUTS.includes(prospect.statut)
+  const isPrescripteur = PRESCRIPTEUR_STATUTS.includes(prospect.statut)
   const { total: prospectScore } = calculateScore(prospect)
   const cuisineLabel = TYPES_CUISINE.find(t => t.value === prospect.type_cuisine)?.label
   const intentionObj = prospect.intention ? INTENTIONS.find(i => i.value === prospect.intention) : null
@@ -78,6 +81,16 @@ export default function KanbanCard({ prospect, onClick }) {
               style={{ backgroundColor: intentionObj.color + '20', color: intentionObj.color }}
             >
               {intentionObj.label}
+            </span>
+          )}
+          {isPrescripteur && prospect.type_prescripteur && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full leading-none bg-amber-500/20 text-amber-400">
+              {getTypePrescripteurLabel(prospect.type_prescripteur)}
+            </span>
+          )}
+          {isPrescripteur && prospect.nombre_deals_apportes > 0 && (
+            <span className="text-[10px] font-medium text-success">
+              {prospect.nombre_deals_apportes} deal{prospect.nombre_deals_apportes > 1 ? 's' : ''}
             </span>
           )}
         </div>

@@ -145,6 +145,8 @@ function buildSubject(p) {
       return `${p.nom} — Votre lettre de mission`
     case 'negociation':
       return `${p.nom} — Suite de nos échanges`
+    case 'prescripteur_a_activer':
+      return `Présentation — Accompagnement restaurateurs`
     case 'prescripteur':
       return `Prise de nouvelles — Collaboration`
     case 'suivi_long_terme':
@@ -634,6 +636,24 @@ function buildEmailBody(p) {
       )
       break
 
+    case 'prescripteur_a_activer':
+      lines.push(
+        `Je me permets de vous contacter car j'accompagne de nombreux restaurateurs ` +
+        `dans leurs projets de cession, d'acquisition et de bail commercial.`
+      )
+      lines.push('')
+      lines.push(
+        `En tant que ${getTypePrescripteurLabel(p.type_prescripteur) || 'professionnel du secteur'}, ` +
+        `vous êtes certainement en contact avec des restaurateurs ayant ce type de problématiques. ` +
+        `Je serais ravi d'échanger avec vous sur la façon dont nous pourrions collaborer — ` +
+        `cela permet souvent d'apporter une vraie valeur ajoutée à vos clients.`
+      )
+      lines.push('')
+      lines.push(
+        `Seriez-vous disponible pour un bref échange téléphonique cette semaine ?`
+      )
+      break
+
     case 'prescripteur':
       lines.push(
         `Je souhaitais prendre de vos nouvelles et vous remercier pour notre collaboration.`
@@ -852,6 +872,13 @@ function buildWhatsApp(p) {
       return (
         `Bonjour ${prenom}, je reviens vers vous suite à nos derniers échanges. ` +
         `Avez-vous pu réfléchir aux points évoqués ? Je suis disponible pour en discuter.`
+      )
+
+    case 'prescripteur_a_activer':
+      return (
+        `Bonjour ${prenom}, je suis avocat spécialisé dans l'accompagnement des restaurateurs ` +
+        `(cession, bail, contentieux). Je serais ravi d'échanger avec vous — ` +
+        `vos clients restaurateurs pourraient bénéficier de cet accompagnement. Disponible pour un call ?`
       )
 
     case 'prescripteur':

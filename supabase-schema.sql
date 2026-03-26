@@ -33,6 +33,7 @@ CREATE TYPE statut_enum AS ENUM (
   'facture',
   'cloture',
   'perdu_refuse',
+  'prescripteur_a_activer',
   'prescripteur',
   'suivi_long_terme'
 );

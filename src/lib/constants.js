@@ -11,8 +11,9 @@ export const STATUTS = [
   { value: 'facture', label: 'Facturé', order: 9, tooltip: 'Mission terminée et facturée' },
   { value: 'cloture', label: 'Clôturé', order: 10, tooltip: 'Dossier terminé — rien à relancer pour le moment' },
   { value: 'perdu_refuse', label: 'Perdu / Refusé', order: 11, tooltip: 'Le prospect a décliné ou ne donne plus suite' },
-  { value: 'prescripteur', label: 'Prescripteur', order: 12, tooltip: 'Contact qui recommande vos services — à entretenir régulièrement' },
-  { value: 'suivi_long_terme', label: 'Suivi long terme', order: 13, tooltip: 'Pas de besoin immédiat — garder le contact pour plus tard' },
+  { value: 'prescripteur_a_activer', label: 'Prescripteur à activer', order: 12, tooltip: 'Nouveau prescripteur identifié — créer la relation et obtenir un premier deal' },
+  { value: 'prescripteur', label: 'Prescripteur actif', order: 13, tooltip: 'Prescripteur qui apporte régulièrement des dossiers — entretenir la relation' },
+  { value: 'suivi_long_terme', label: 'Suivi long terme', order: 14, tooltip: 'Pas de besoin immédiat — garder le contact pour plus tard' },
 ]
 
 export const TUNNELS = [
@@ -31,11 +32,18 @@ export const TUNNELS = [
     statuts: ['relance_en_attente', 'deal_maturation', 'lettre_mission_envoyee', 'negociation', 'mission_en_cours'],
   },
   {
-    id: 'suivi',
-    label: 'Suivi & Prescripteurs',
-    description: 'Suivi long terme, prescripteurs à relancer trimestriellement',
+    id: 'prescripteurs',
+    label: 'Prescripteurs',
+    description: 'Réseau d\'apporteurs d\'affaires à entretenir',
     color: '#f59e0b',
-    statuts: ['facture', 'cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'],
+    statuts: ['prescripteur_a_activer', 'prescripteur'],
+  },
+  {
+    id: 'suivi',
+    label: 'Terminés / Suivi',
+    description: 'Dossiers terminés et prospects en veille',
+    color: '#6b7280',
+    statuts: ['facture', 'cloture', 'perdu_refuse', 'suivi_long_terme'],
   },
 ]
 
@@ -46,10 +54,14 @@ export const TYPES_PRESCRIPTEUR = [
   { value: 'avocat', label: 'Avocat' },
   { value: 'banquier', label: 'Banquier' },
   { value: 'courtier', label: 'Courtier' },
+  { value: 'courtier_fonds', label: 'Courtier en fonds de commerce' },
+  { value: 'conseil_cession', label: 'Conseil en cession / transmission' },
+  { value: 'syndic', label: 'Syndic / Administrateur judiciaire' },
   { value: 'autre', label: 'Autre' },
 ]
 
-export const SUIVI_STATUTS = ['facture', 'cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme']
+export const SUIVI_STATUTS = ['facture', 'cloture', 'perdu_refuse', 'suivi_long_terme']
+export const PRESCRIPTEUR_STATUTS = ['prescripteur_a_activer', 'prescripteur']
 
 export const DELAI_RELANCE_SUIVI_JOURS = 90
 
@@ -63,8 +75,9 @@ export const DELAIS_RELANCE_PAR_STATUT = {
   deal_maturation: 30,        // Deal en maturation — relance mensuelle
   lettre_mission_envoyee: 7,  // Suivi lettre de mission
   negociation: 5,             // Négociation — suivi rapide
-  prescripteur: 90,           // Trimestriel
-  suivi_long_terme: 90,       // Trimestriel
+  prescripteur_a_activer: 30,  // Mensuel — créer la relation
+  prescripteur: 60,            // Bi-mensuel — entretenir la relation
+  suivi_long_terme: 90,        // Trimestriel
 }
 
 /**
@@ -206,6 +219,7 @@ export const STAGE_PROBABILITY = {
   facture: 1.0,
   cloture: 1.0,
   perdu_refuse: 0,
+  prescripteur_a_activer: 0,
   prescripteur: 0,
   suivi_long_terme: 0.10,
 }

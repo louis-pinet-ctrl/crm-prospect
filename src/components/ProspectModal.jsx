@@ -575,13 +575,13 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                       Prescripteur & Suivi
                     </h4>
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                      {prospect.statut === 'prescripteur' && prospect.type_prescripteur && (
+                      {['prescripteur', 'prescripteur_a_activer'].includes(prospect.statut) && prospect.type_prescripteur && (
                         <div>
                           <span className="text-text-secondary text-xs">Type prescripteur</span>
                           <p className="text-text-primary">{getTypePrescripteurLabel(prospect.type_prescripteur)}</p>
                         </div>
                       )}
-                      {prospect.statut === 'prescripteur' && prospect.nombre_deals_apportes > 0 && (
+                      {['prescripteur', 'prescripteur_a_activer'].includes(prospect.statut) && prospect.nombre_deals_apportes > 0 && (
                         <div>
                           <span className="text-text-secondary text-xs">Deals apportés</span>
                           <p className="text-text-primary font-medium">{prospect.nombre_deals_apportes}</p>
@@ -1006,7 +1006,7 @@ function RelanceSuggestions({ prospect, onUpdate, onReload }) {
   }
 
   // 30+ jours sans interaction sur statut actif
-  if (daysSince && daysSince > 30 && !['cloture', 'perdu_refuse', 'facture', 'prescripteur', 'suivi_long_terme'].includes(p.statut)) {
+  if (daysSince && daysSince > 30 && !['cloture', 'perdu_refuse', 'facture', 'prescripteur', 'prescripteur_a_activer', 'suivi_long_terme'].includes(p.statut)) {
     suggestions.push({
       type: 'warning',
       message: `${daysSince} jours sans interaction. Ce prospect risque de se refroidir.`,

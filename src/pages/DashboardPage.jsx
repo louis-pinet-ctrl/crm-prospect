@@ -89,7 +89,7 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
 
     // Reste à facturer = ca_estime des dossiers actifs - ce qui a déjà été facturé
     const resteAFacturer = filteredProspects
-      .filter(p => !['perdu_refuse', 'prescripteur', 'suivi_long_terme', 'cloture'].includes(p.statut))
+      .filter(p => !['perdu_refuse', 'prescripteur', 'prescripteur_a_activer', 'suivi_long_terme', 'cloture'].includes(p.statut))
       .reduce((sum, p) => {
         const estime = p.ca_estime || 0
         const deja = facturesTotauxParProspect[p.id] || 0
@@ -105,7 +105,7 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
 
     const actifs = filteredProspects.filter(
-      p => !['cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)
+      p => !['cloture', 'perdu_refuse', 'prescripteur', 'prescripteur_a_activer', 'suivi_long_terme'].includes(p.statut)
     ).length
 
     return { facture, resteAFacturer, enCours, pipeline, actifs }
@@ -131,10 +131,10 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
   // --- Conversion rate per stage (pipeline only, excl. prescripteur/suivi/perdu) ---
   const conversionData = useMemo(() => {
     const pipelineStatuts = STATUTS.filter(
-      s => !['perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(s.value)
+      s => !['perdu_refuse', 'prescripteur', 'prescripteur_a_activer', 'suivi_long_terme'].includes(s.value)
     )
     const pipelineProspects = filteredProspects.filter(
-      p => !['perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)
+      p => !['perdu_refuse', 'prescripteur', 'prescripteur_a_activer', 'suivi_long_terme'].includes(p.statut)
     )
 
     const counts = pipelineStatuts.map(s => ({
@@ -193,7 +193,7 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
     }
 
     const activeProspects = filteredProspects.filter(
-      p => !['cloture', 'perdu_refuse', 'facture', 'prescripteur', 'suivi_long_terme'].includes(p.statut)
+      p => !['cloture', 'perdu_refuse', 'facture', 'prescripteur', 'prescripteur_a_activer', 'suivi_long_terme'].includes(p.statut)
     )
 
     activeProspects.forEach(p => {
@@ -257,7 +257,7 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
       const ca = p.ca_estime || 0
       if (p.statut === 'mission_en_cours') {
         months[idx].enCours += ca
-      } else if (!['facture', 'cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'].includes(p.statut)) {
+      } else if (!['facture', 'cloture', 'perdu_refuse', 'prescripteur', 'prescripteur_a_activer', 'suivi_long_terme'].includes(p.statut)) {
         months[idx].previsionnel += ca
       }
     })
@@ -319,7 +319,7 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
     const now = new Date()
     const seuil = new Date(now.getTime() - SEUIL_DORMANT_JOURS * 24 * 60 * 60 * 1000)
     return filteredProspects.filter(p => {
-      if (['cloture', 'perdu_refuse', 'facture', 'prescripteur'].includes(p.statut)) return false
+      if (['cloture', 'perdu_refuse', 'facture', 'prescripteur', 'prescripteur_a_activer'].includes(p.statut)) return false
       const lastInteraction = p.date_derniere_interaction
         ? new Date(p.date_derniere_interaction)
         : p.date_creation ? new Date(p.date_creation) : null

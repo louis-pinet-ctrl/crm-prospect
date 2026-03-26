@@ -36,7 +36,7 @@ export default function MaJourneePage({ prospects, onSelectProspect, reload }) {
 
     const seuilDate = new Date(now.getTime() - SEUIL_DORMANT_JOURS * 24 * 60 * 60 * 1000)
     const dormants = active.filter(p => {
-      if (p.statut === 'prescripteur') return false
+      if (p.statut === 'prescripteur' || p.statut === 'prescripteur_a_activer') return false
       if (p.date_relance) return false // a déjà une relance planifiée
       const last = p.date_derniere_interaction
         ? new Date(p.date_derniere_interaction)

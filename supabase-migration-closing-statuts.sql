@@ -4,3 +4,4 @@
 
 ALTER TYPE statut_enum ADD VALUE IF NOT EXISTS 'deal_maturation' AFTER 'relance_en_attente';
 ALTER TYPE statut_enum ADD VALUE IF NOT EXISTS 'negociation' AFTER 'lettre_mission_envoyee';
+ALTER TYPE statut_enum ADD VALUE IF NOT EXISTS 'prescripteur_a_activer' AFTER 'perdu_refuse';

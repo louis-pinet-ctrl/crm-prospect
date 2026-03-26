@@ -243,7 +243,7 @@ function RelanceMetrics({ prospects }) {
     // Dormants (sans interaction depuis SEUIL_DORMANT_JOURS)
     const seuilDate = new Date(now.getTime() - SEUIL_DORMANT_JOURS * 24 * 60 * 60 * 1000)
     const dormants = activeProspects.filter(p => {
-      if (p.statut === 'prescripteur') return false
+      if (p.statut === 'prescripteur' || p.statut === 'prescripteur_a_activer') return false
       const last = p.date_derniere_interaction
         ? new Date(p.date_derniere_interaction)
         : p.date_creation ? new Date(p.date_creation) : null
@@ -251,7 +251,7 @@ function RelanceMetrics({ prospects }) {
     })
 
     // Sans relance planifiée (actifs seulement)
-    const sansRelance = activeProspects.filter(p => !p.date_relance && p.statut !== 'prescripteur')
+    const sansRelance = activeProspects.filter(p => !p.date_relance && p.statut !== 'prescripteur' && p.statut !== 'prescripteur_a_activer')
 
     // Relances effectuées (distribution)
     const totalRelances = activeProspects.reduce((sum, p) => sum + (p.nombre_relances_effectuees || 0), 0)
