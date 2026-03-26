@@ -663,7 +663,7 @@ export default function ProspectForm({ prospect, onSubmit, onCancel }) {
             )}
           </div>
           <div>
-            <label className={labelClass}>CA annuel déclaré / Pappers</label>
+            <label className={labelClass}>CA annuel déclaré / SIRENE</label>
             <input
               type="number"
               step="1000"

@@ -156,7 +156,14 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
       {expanded && <div className="absolute inset-0 bg-black/40 -z-10" onClick={() => setExpanded(false)} />}
       <div className={innerClass}>
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-medium text-text-primary">Historique</h4>
+        <h4 className="text-sm font-medium text-text-primary flex items-center gap-2">
+          Historique
+          {notes.length > 0 && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">
+              {notes.length}
+            </span>
+          )}
+        </h4>
         <button
           onClick={() => setExpanded(prev => !prev)}
           className="p-1.5 rounded-lg hover:bg-bg-hover transition-colors text-text-secondary hover:text-primary"

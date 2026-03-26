@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Phone, CalendarPlus, Download, Timer } from 'lucide-react'
+import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Phone, CalendarPlus, Download, Timer, Copy, AlertTriangle } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import ProspectSummary from './ProspectSummary'
@@ -27,6 +27,21 @@ import {
   getDateRelanceParResultat,
 } from '../lib/constants'
 import { generateRelanceTemplates } from '../lib/relanceTemplates'
+
+function getDaysAgo(dateStr) {
+  if (!dateStr) return Infinity
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
+}
+
+function formatTimeAgo(dateStr) {
+  const days = getDaysAgo(dateStr)
+  if (days === 0) return "aujourd'hui"
+  if (days === 1) return 'hier'
+  if (days < 7) return `il y a ${days} jours`
+  if (days < 30) return `il y a ${Math.floor(days / 7)} sem.`
+  if (days < 365) return `il y a ${Math.floor(days / 30)} mois`
+  return `il y a ${Math.floor(days / 365)} an(s)`
+}
 
 function formatWhatsAppUrl(phone) {
   if (!phone) return null
@@ -139,11 +154,20 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative h-full w-full bg-bg-card border-l border-border overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-bg-card border-b border-border px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-lg font-semibold text-text-primary">
-            {isNew ? 'Nouveau prospect' : prospect.nom}
-          </h2>
-          <div className="flex items-center gap-2">
+        <div className="sticky top-0 bg-bg-card border-b border-border px-6 py-4 z-10">
+          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <h2 className="text-lg font-semibold text-text-primary truncate">
+              {isNew ? 'Nouveau prospect' : prospect.nom}
+            </h2>
+            {!isNew && prospect.etat_administratif === 'C' && (
+              <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-danger/20 text-danger">
+                <AlertTriangle size={10} />
+                Entreprise fermée
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             {!isNew && !editing && (
               <>
                 <button
@@ -167,6 +191,22 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
               <X size={18} />
             </button>
           </div>
+          </div>
+          {!isNew && !editing && (
+            <div className="flex items-center gap-3 mt-1.5 text-[11px] text-text-secondary flex-wrap">
+              {prospect.date_creation && (
+                <span>Créé le {new Date(prospect.date_creation).toLocaleDateString('fr-FR')}</span>
+              )}
+              {prospect.date_derniere_interaction && (
+                <span className={`font-medium ${getDaysAgo(prospect.date_derniere_interaction) > 14 ? 'text-yellow-400' : getDaysAgo(prospect.date_derniere_interaction) > 30 ? 'text-danger' : 'text-text-secondary'}`}>
+                  Dernier contact : {formatTimeAgo(prospect.date_derniere_interaction)}
+                </span>
+              )}
+              {!prospect.date_derniere_interaction && (
+                <span className="text-yellow-400 font-medium">Aucun contact enregistré</span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="p-6">
@@ -266,6 +306,13 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                       <div className="flex items-center gap-2">
                         <p className="text-text-primary">{prospect.telephone}</p>
                         <button
+                          onClick={() => { navigator.clipboard.writeText(prospect.telephone); toast.success('Téléphone copié') }}
+                          className="p-1 rounded hover:bg-bg-hover transition-colors"
+                          title="Copier"
+                        >
+                          <Copy size={12} className="text-text-secondary" />
+                        </button>
+                        <button
                           onClick={() => handleQuickAction('appel', `tel:${prospect.telephone}`)}
                           className="p-1 rounded hover:bg-primary/20 transition-colors"
                           title="Appeler (+ note auto)"
@@ -289,6 +336,13 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                       <span className="text-text-secondary text-xs">Email</span>
                       <div className="flex items-center gap-2">
                         <p className="text-text-primary truncate">{prospect.email}</p>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(prospect.email); toast.success('Email copié') }}
+                          className="p-1 rounded hover:bg-bg-hover transition-colors shrink-0"
+                          title="Copier"
+                        >
+                          <Copy size={12} className="text-text-secondary" />
+                        </button>
                         <button
                           onClick={() => handleQuickAction(
                             'email',
@@ -377,7 +431,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                     )}
                     {prospect.ca_annuel_declare != null && (
                       <div>
-                        <span className="text-text-secondary text-xs">CA annuel (Pappers)</span>
+                        <span className="text-text-secondary text-xs">CA annuel (SIRENE)</span>
                         <p className="text-text-primary font-medium">{formatCurrency(prospect.ca_annuel_declare)}</p>
                       </div>
                     )}
