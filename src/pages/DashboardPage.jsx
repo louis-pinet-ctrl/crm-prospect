@@ -101,7 +101,7 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
 
     const pipeline = filteredProspects
-      .filter(p => ['relance_en_attente', 'lettre_mission_envoyee', 'mission_en_cours', 'facture'].includes(p.statut))
+      .filter(p => ['relance_en_attente', 'deal_maturation', 'lettre_mission_envoyee', 'negociation', 'mission_en_cours'].includes(p.statut))
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
 
     const actifs = filteredProspects.filter(
@@ -122,7 +122,7 @@ export default function DashboardPage({ prospects, allFactures = [] }) {
       .filter(p => p.statut === 'mission_en_cours')
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
     const pipeline = yearProspects
-      .filter(p => ['relance_en_attente', 'lettre_mission_envoyee', 'mission_en_cours', 'facture'].includes(p.statut))
+      .filter(p => ['relance_en_attente', 'deal_maturation', 'lettre_mission_envoyee', 'negociation', 'mission_en_cours'].includes(p.statut))
       .reduce((sum, p) => sum + (p.ca_estime || 0), 0)
     return { facture, enCours, pipeline }
   }, [prospects, allFactures])

@@ -5,8 +5,8 @@ import { TUNNELS, STATUTS, formatCurrency, CA_OBJECTIFS } from '../lib/constants
 export default function PipelineSummary({ prospects }) {
   const stats = useMemo(() => {
     const activeStatuts = new Set(['prospect_identifie', 'premier_contact', 'diagnostic_rdv',
-      'relance_en_attente', 'lettre_mission_envoyee', 'mission_en_cours'])
-    const closingStatuts = new Set(['relance_en_attente', 'lettre_mission_envoyee', 'mission_en_cours'])
+      'relance_en_attente', 'deal_maturation', 'lettre_mission_envoyee', 'negociation', 'mission_en_cours'])
+    const closingStatuts = new Set(['relance_en_attente', 'deal_maturation', 'lettre_mission_envoyee', 'negociation', 'mission_en_cours'])
     const enCoursStatuts = new Set(['mission_en_cours'])
     const signeStatuts = new Set(['mission_en_cours', 'facture', 'cloture'])
     const perduStatuts = new Set(['perdu_refuse'])

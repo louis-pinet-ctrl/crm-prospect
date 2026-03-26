@@ -262,7 +262,7 @@ function RelanceMetrics({ prospects }) {
     // Prospects avec beaucoup de relances (>= 5) sans conversion
     const stagnants = activeProspects.filter(p =>
       (p.nombre_relances_effectuees || 0) >= 5 &&
-      ['prospect_identifie', 'premier_contact', 'relance_en_attente'].includes(p.statut)
+      ['prospect_identifie', 'premier_contact', 'relance_en_attente', 'deal_maturation'].includes(p.statut)
     )
 
     return { overdue, dormants, sansRelance, totalRelances, avgRelances, stagnants, activeCount: activeProspects.length }

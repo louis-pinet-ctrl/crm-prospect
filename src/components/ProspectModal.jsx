@@ -994,7 +994,7 @@ function RelanceSuggestions({ prospect, onUpdate, onReload }) {
     : null
 
   // 5+ relances sans conversion sur statuts early-stage
-  if (relances >= 5 && ['prospect_identifie', 'premier_contact', 'relance_en_attente'].includes(p.statut)) {
+  if (relances >= 5 && ['prospect_identifie', 'premier_contact', 'relance_en_attente', 'deal_maturation'].includes(p.statut)) {
     suggestions.push({
       type: 'danger',
       message: `${relances} relances sans avancement. Envisagez de passer en « Suivi long terme » ou « Perdu/Refusé ».`,
@@ -1017,7 +1017,10 @@ function RelanceSuggestions({ prospect, onUpdate, onReload }) {
   if (p.statut === 'lettre_mission_envoyee' && relances >= 3) {
     suggestions.push({
       type: 'info',
-      message: 'Lettre de mission en attente depuis plusieurs relances. Proposez un ajustement des conditions ?',
+      message: 'Lettre de mission en attente depuis plusieurs relances. Passez en négociation ?',
+      actions: [
+        { label: 'Passer en Négociation', statut: 'negociation' },
+      ],
     })
   }
 

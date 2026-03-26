@@ -139,8 +139,12 @@ function buildSubject(p) {
     case 'relance_en_attente':
       if (intensity === 'late') return `${p.nom} — Je reste à votre disposition`
       return `${p.nom} — Avancement de votre dossier`
+    case 'deal_maturation':
+      return `${p.nom} — Point sur votre projet`
     case 'lettre_mission_envoyee':
       return `${p.nom} — Votre lettre de mission`
+    case 'negociation':
+      return `${p.nom} — Suite de nos échanges`
     case 'prescripteur':
       return `Prise de nouvelles — Collaboration`
     case 'suivi_long_terme':
@@ -573,6 +577,23 @@ function buildEmailBody(p) {
       }
       break
 
+    case 'deal_maturation':
+      lines.push(
+        `Je souhaitais faire un point avec vous concernant ${context}.`
+      )
+      lines.push('')
+      lines.push(
+        `Je sais que ce type de projet nécessite du temps et que les conditions ` +
+        `doivent être réunies. De mon côté, je continue à suivre votre dossier ` +
+        `et je reste mobilisé pour le moment où vous serez prêt à avancer.`
+      )
+      lines.push('')
+      lines.push(
+        `Y a-t-il eu des évolutions de votre côté ? Un rapide échange téléphonique ` +
+        `nous permettrait de faire le point.`
+      )
+      break
+
     case 'lettre_mission_envoyee':
       lines.push(
         `Je reviens vers vous concernant la lettre de mission que je vous ai adressée pour ${context}.`
@@ -595,6 +616,22 @@ function buildEmailBody(p) {
           `la lettre de mission peut tout à fait être adaptée à vos besoins.`
         )
       }
+      break
+
+    case 'negociation':
+      lines.push(
+        `Je reviens vers vous suite à nos derniers échanges concernant ${context}.`
+      )
+      lines.push('')
+      lines.push(
+        `Avez-vous pu réfléchir aux points que nous avons abordés ? ` +
+        `Je suis ouvert à en discuter pour trouver un cadre qui vous convienne.`
+      )
+      lines.push('')
+      lines.push(
+        `N'hésitez pas à me faire part de vos questions ou ajustements souhaités — ` +
+        `l'objectif est de démarrer dans les meilleures conditions.`
+      )
       break
 
     case 'prescripteur':
@@ -799,10 +836,22 @@ function buildWhatsApp(p) {
         `Avez-vous pu avancer de votre côté ? Je suis disponible pour un point rapide si besoin.`
       )
 
+    case 'deal_maturation':
+      return (
+        `Bonjour ${prenom}, je fais un point rapide sur ${context}. ` +
+        `Y a-t-il eu du nouveau de votre côté ? Je reste disponible dès que vous souhaitez avancer.`
+      )
+
     case 'lettre_mission_envoyee':
       return (
         `Bonjour ${prenom}, avez-vous pu consulter la lettre de mission ? ` +
         `N'hésitez pas si vous souhaitez que l'on en discute ou si certains points méritent des ajustements.`
+      )
+
+    case 'negociation':
+      return (
+        `Bonjour ${prenom}, je reviens vers vous suite à nos derniers échanges. ` +
+        `Avez-vous pu réfléchir aux points évoqués ? Je suis disponible pour en discuter.`
       )
 
     case 'prescripteur':

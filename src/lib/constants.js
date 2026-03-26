@@ -3,14 +3,16 @@ export const STATUTS = [
   { value: 'prospect_identifie', label: 'Prospect identifié', order: 1, tooltip: 'Prospect repéré mais pas encore contacté' },
   { value: 'premier_contact', label: 'Premier contact', order: 2, tooltip: 'Premier échange réalisé — qualifier le besoin' },
   { value: 'diagnostic_rdv', label: 'Diagnostic / RDV', order: 3, tooltip: 'RDV fixé ou diagnostic en cours pour évaluer le dossier' },
-  { value: 'relance_en_attente', label: 'Deal qualifié', order: 4, tooltip: 'Le besoin est confirmé et le budget identifié — il reste à envoyer la proposition' },
-  { value: 'lettre_mission_envoyee', label: 'Lettre de mission envoyée', order: 5, tooltip: 'Proposition envoyée — en attente de signature du client' },
-  { value: 'mission_en_cours', label: 'Mission en cours', order: 6, tooltip: 'Mission signée et travail en cours' },
-  { value: 'facture', label: 'Facturé', order: 7, tooltip: 'Mission terminée et facturée' },
-  { value: 'cloture', label: 'Clôturé', order: 8, tooltip: 'Dossier terminé — rien à relancer pour le moment' },
-  { value: 'perdu_refuse', label: 'Perdu / Refusé', order: 9, tooltip: 'Le prospect a décliné ou ne donne plus suite' },
-  { value: 'prescripteur', label: 'Prescripteur', order: 10, tooltip: 'Contact qui recommande vos services — à entretenir régulièrement' },
-  { value: 'suivi_long_terme', label: 'Suivi long terme', order: 11, tooltip: 'Pas de besoin immédiat — garder le contact pour plus tard' },
+  { value: 'relance_en_attente', label: 'Deal qualifié', order: 4, tooltip: 'Le besoin est confirmé — prêt à avancer vers une proposition' },
+  { value: 'deal_maturation', label: 'Deal en maturation', order: 5, tooltip: 'Deal confirmé mais pas immédiat — à suivre régulièrement sans forcer' },
+  { value: 'lettre_mission_envoyee', label: 'Lettre de mission envoyée', order: 6, tooltip: 'Proposition envoyée — en attente de retour du client' },
+  { value: 'negociation', label: 'Négociation', order: 7, tooltip: 'Discussion en cours sur le périmètre ou les honoraires' },
+  { value: 'mission_en_cours', label: 'Mission en cours', order: 8, tooltip: 'Mission signée et travail en cours' },
+  { value: 'facture', label: 'Facturé', order: 9, tooltip: 'Mission terminée et facturée' },
+  { value: 'cloture', label: 'Clôturé', order: 10, tooltip: 'Dossier terminé — rien à relancer pour le moment' },
+  { value: 'perdu_refuse', label: 'Perdu / Refusé', order: 11, tooltip: 'Le prospect a décliné ou ne donne plus suite' },
+  { value: 'prescripteur', label: 'Prescripteur', order: 12, tooltip: 'Contact qui recommande vos services — à entretenir régulièrement' },
+  { value: 'suivi_long_terme', label: 'Suivi long terme', order: 13, tooltip: 'Pas de besoin immédiat — garder le contact pour plus tard' },
 ]
 
 export const TUNNELS = [
@@ -26,14 +28,14 @@ export const TUNNELS = [
     label: 'Closing',
     description: 'Du deal qualifié à la signature',
     color: '#8b5cf6',
-    statuts: ['relance_en_attente', 'lettre_mission_envoyee', 'mission_en_cours', 'facture'],
+    statuts: ['relance_en_attente', 'deal_maturation', 'lettre_mission_envoyee', 'negociation', 'mission_en_cours'],
   },
   {
     id: 'suivi',
     label: 'Suivi & Prescripteurs',
     description: 'Suivi long terme, prescripteurs à relancer trimestriellement',
     color: '#f59e0b',
-    statuts: ['cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'],
+    statuts: ['facture', 'cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme'],
   },
 ]
 
@@ -47,7 +49,7 @@ export const TYPES_PRESCRIPTEUR = [
   { value: 'autre', label: 'Autre' },
 ]
 
-export const SUIVI_STATUTS = ['cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme']
+export const SUIVI_STATUTS = ['facture', 'cloture', 'perdu_refuse', 'prescripteur', 'suivi_long_terme']
 
 export const DELAI_RELANCE_SUIVI_JOURS = 90
 
@@ -57,8 +59,10 @@ export const DELAIS_RELANCE_PAR_STATUT = {
   prospect_identifie: 3,      // Relancer rapidement un prospect froid
   premier_contact: 7,         // Laisser le temps de réfléchir
   diagnostic_rdv: 5,          // Suivi post-RDV assez rapide
-  relance_en_attente: 14,     // Relance standard
+  relance_en_attente: 14,     // Deal qualifié — relance standard
+  deal_maturation: 30,        // Deal en maturation — relance mensuelle
   lettre_mission_envoyee: 7,  // Suivi lettre de mission
+  negociation: 5,             // Négociation — suivi rapide
   prescripteur: 90,           // Trimestriel
   suivi_long_terme: 90,       // Trimestriel
 }
@@ -195,7 +199,9 @@ export const STAGE_PROBABILITY = {
   premier_contact: 0.15,
   diagnostic_rdv: 0.30,
   relance_en_attente: 0.25,
+  deal_maturation: 0.20,
   lettre_mission_envoyee: 0.60,
+  negociation: 0.70,
   mission_en_cours: 0.90,
   facture: 1.0,
   cloture: 1.0,

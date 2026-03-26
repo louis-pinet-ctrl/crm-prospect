@@ -175,7 +175,9 @@ export function calculateScore(prospect, notes = []) {
   // Stade pipeline (0-10)
   const stadePoints = {
     mission_en_cours: 10,
+    negociation: 9,
     lettre_mission_envoyee: 8,
+    deal_maturation: 5,
     diagnostic_rdv: 6,
     relance_en_attente: 4,
     premier_contact: 2,
