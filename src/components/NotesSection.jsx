@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Phone, Mail, MessageCircle, Calendar, FileText, StickyNote, CalendarClock, Pencil, Trash2, Check, X } from 'lucide-react'
+import { Phone, Mail, MessageCircle, Calendar, FileText, StickyNote, CalendarClock, Pencil, Trash2, Check, X, Maximize2, Minimize2 } from 'lucide-react'
 import { fetchNotes, createNote, updateNote, deleteNote, updateProspectAfterInteraction, updateProspect } from '../lib/supabase'
 import { TYPES_NOTE, TYPES_INTERACTION, RESULTATS_INTERACTION } from '../lib/constants'
 import { useToast } from './Toast'
@@ -27,6 +27,7 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
   const toast = useToast()
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState(false)
   const [contenu, setContenu] = useState('')
   const [typeNote, setTypeNote] = useState('appel')
   const [resultat, setResultat] = useState('')
@@ -143,9 +144,27 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
   const getResultatLabel = (val) =>
     RESULTATS_INTERACTION.find(r => r.value === val)?.label || val
 
+  const wrapperClass = expanded
+    ? 'fixed inset-0 z-[60] bg-bg-card flex flex-col'
+    : ''
+  const innerClass = expanded
+    ? 'flex-1 flex flex-col overflow-hidden px-6 py-4'
+    : ''
+
   return (
-    <div>
-      <h4 className="text-sm font-medium text-text-primary mb-3">Historique</h4>
+    <div className={wrapperClass}>
+      {expanded && <div className="absolute inset-0 bg-black/40 -z-10" onClick={() => setExpanded(false)} />}
+      <div className={innerClass}>
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-sm font-medium text-text-primary">Historique</h4>
+        <button
+          onClick={() => setExpanded(prev => !prev)}
+          className="p-1.5 rounded-lg hover:bg-bg-hover transition-colors text-text-secondary hover:text-primary"
+          title={expanded ? 'Réduire' : 'Agrandir'}
+        >
+          {expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        </button>
+      </div>
 
       <form onSubmit={handleAdd} className="mb-4 space-y-2">
         {/* Ligne 1 : type + bouton */}
@@ -214,7 +233,7 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
       ) : notes.length === 0 ? (
         <p className="text-text-secondary text-sm">Aucune note pour le moment.</p>
       ) : (
-        <div className="space-y-3 max-h-80 overflow-y-auto">
+        <div className={`space-y-3 overflow-y-auto ${expanded ? 'flex-1' : 'max-h-80'}`}>
           {notes.map(note => (
             <NoteItem
               key={note.id}
@@ -228,6 +247,7 @@ export default function NotesSection({ prospectId, onProspectUpdate }) {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }
