@@ -57,7 +57,7 @@ function getProfilContext(p) {
     }
     parts.push(cuisines[p.type_cuisine] || p.type_cuisine)
   }
-  return parts.join(' — ')
+  return parts.join(' - ')
 }
 
 function getCuisineLabel(typeCuisine) {
@@ -116,43 +116,43 @@ function buildSubject(p) {
       const isInterSubj = typeSubj === 'agent immobilier' || typeSubj === 'avocat' || typeSubj === 'conseiller'
 
       if (isECSubj || isInterSubj) {
-        if (intensity === 'first') return `Simulation de valorisation — accompagnement juridique cession restaurant`
-        if (intensity === 'early') return `Suite simulation de valorisation — point juridique`
+        if (intensity === 'first') return `Simulation de valorisation - accompagnement juridique cession restaurant`
+        if (intensity === 'early') return `Suite simulation de valorisation - point juridique`
         return `Votre client a-t-il avancé sur son projet de cession ?`
       }
       if (intensity === 'first') {
         if (p.type_cuisine) {
-          return `Votre ${getCuisineLabel(p.type_cuisine)} — quelques observations sur votre estimation`
+          return `Votre ${getCuisineLabel(p.type_cuisine)} - quelques observations sur votre estimation`
         }
-        return `${p.nom} — quelques observations sur votre estimation`
+        return `${p.nom} - quelques observations sur votre estimation`
       }
-      if (intensity === 'early') return `${p.nom} — un point qui pourrait vous être utile`
-      return `${p.nom} — votre projet de cession`
+      if (intensity === 'early') return `${p.nom} - un point qui pourrait vous être utile`
+      return `${p.nom} - votre projet de cession`
     }
     case 'prospect_identifie':
-      return `${p.nom} — Accompagnement juridique pour votre restaurant`
+      return `${p.nom} - Accompagnement juridique pour votre restaurant`
     case 'premier_contact':
-      if (intensity === 'first') return `${p.nom} — Suite à notre échange`
-      return `${p.nom} — Des nouvelles de votre projet ?`
+      if (intensity === 'first') return `${p.nom} - Suite à notre échange`
+      return `${p.nom} - Des nouvelles de votre projet ?`
     case 'diagnostic_rdv':
-      return `${p.nom} — Suite à notre rendez-vous`
+      return `${p.nom} - Suite à notre rendez-vous`
     case 'relance_en_attente':
-      if (intensity === 'late') return `${p.nom} — Je reste à votre disposition`
-      return `${p.nom} — Avancement de votre dossier`
+      if (intensity === 'late') return `${p.nom} - Je reste à votre disposition`
+      return `${p.nom} - Avancement de votre dossier`
     case 'deal_maturation':
-      return `${p.nom} — Point sur votre projet`
+      return `${p.nom} - Point sur votre projet`
     case 'lettre_mission_envoyee':
-      return `${p.nom} — Votre lettre de mission`
+      return `${p.nom} - Votre lettre de mission`
     case 'negociation':
-      return `${p.nom} — Suite de nos échanges`
+      return `${p.nom} - Suite de nos échanges`
     case 'prescripteur_a_activer':
-      return `Présentation — Accompagnement restaurateurs`
+      return `Présentation - Accompagnement restaurateurs`
     case 'prescripteur':
-      return `Prise de nouvelles — Collaboration`
+      return `Prise de nouvelles - Collaboration`
     case 'suivi_long_terme':
-      return `${p.nom} — Votre projet de ${typeDossier.toLowerCase()}`
+      return `${p.nom} - Votre projet de ${typeDossier.toLowerCase()}`
     default:
-      return `${p.nom} — ${typeDossier}`
+      return `${p.nom} -${typeDossier}`
   }
 }
 
@@ -188,20 +188,20 @@ function buildEmailBody(p) {
       if (intensity === 'first') {
 
         if (isRestaurateur) {
-          // ===== RESTAURATEUR / EXPLOITANT — premier email =====
+          // ===== RESTAURATEUR / EXPLOITANT - premier email =====
 
           // 1) S'intéresser : montrer qu'on a regardé sa situation
           if (cuisine && estimation) {
             lines.push(
               `J'ai vu que vous aviez fait une estimation de valorisation pour votre activité en ${cuisine}` +
               (p.etablissement ? ` (${p.etablissement})` : '') +
-              ` — le simulateur vous a donné une médiane autour de ${formatAmount(estimation)}.`
+              ` - le simulateur vous a donné une médiane autour de ${formatAmount(estimation)}.`
             )
           } else if (estimation) {
             lines.push(
               `J'ai vu que vous aviez utilisé le simulateur de valorisation` +
               (p.etablissement ? ` pour ${p.etablissement}` : '') +
-              ` — estimation médiane autour de ${formatAmount(estimation)}.`
+              ` - estimation médiane autour de ${formatAmount(estimation)}.`
             )
           } else {
             lines.push(
@@ -216,13 +216,13 @@ function buildEmailBody(p) {
             const ratioLoyer = Math.round((p.loyer_mensuel * 12) / p.ca_annuel_declare * 100)
             if (ratioLoyer > 12) {
               lines.push(
-                `En regardant vos chiffres, je note que votre loyer représente environ ${ratioLoyer}% de votre CA — ` +
+                `En regardant vos chiffres, je note que votre loyer représente environ ${ratioLoyer}% de votre CA -` +
                 `c'est un point qui pèse souvent dans la négociation avec un acquéreur, et sur lequel ` +
                 `il y a parfois des leviers juridiques (renégociation au renouvellement, déplafonnement contestable, etc.).`
               )
             } else {
               lines.push(
-                `Votre ratio loyer/CA est bien positionné (environ ${ratioLoyer}%) — c'est un vrai atout ` +
+                `Votre ratio loyer/CA est bien positionné (environ ${ratioLoyer}%) - c'est un vrai atout ` +
                 `pour la valorisation et ça facilite les discussions avec les acquéreurs potentiels.`
               )
             }
@@ -230,17 +230,17 @@ function buildEmailBody(p) {
           } else if (hasSalaries && p.nombre_salaries >= 3) {
             lines.push(
               `Avec ${p.nombre_salaries} salariés, la question du transfert des contrats de travail ` +
-              `sera centrale dans la cession — c'est un point que les acquéreurs regardent de près ` +
+              `sera centrale dans la cession - c'est un point que les acquéreurs regardent de près ` +
               `et qui peut impacter la valorisation.`
             )
             lines.push('')
           }
 
-          // 2) Ce que je fais — des faits, centré sur la plus-value
+          // 2) Ce que je fais - des faits, centré sur la plus-value
           lines.push(
             `Je suis Louis Pinet, avocat spécialisé dans la cession de fonds de commerce en restauration. ` +
             `Mon travail au quotidien, c'est d'auditer les baux commerciaux, d'identifier ce qui valorise ` +
-            `ou fragilise un fonds, et de rédiger des actes de cession qui protègent le vendeur — ` +
+            `ou fragilise un fonds, et de rédiger des actes de cession qui protègent le vendeur -` +
             `notamment sur les garanties, les conditions suspensives et les clauses de non-concurrence.`
           )
           lines.push('')
@@ -248,7 +248,7 @@ function buildEmailBody(p) {
           // 3) Proposition sans pression
           lines.push(
             `Si vous êtes en réflexion sur une cession, je peux vous faire un retour de 10 minutes ` +
-            `sur votre estimation — ce qui la tire vers le haut, ce qui la fragilise, et les points ` +
+            `sur votre estimation - ce qui la tire vers le haut, ce qui la fragilise, et les points ` +
             `du bail à vérifier avant de fixer un prix.`
           )
           lines.push('')
@@ -258,13 +258,13 @@ function buildEmailBody(p) {
           )
 
         } else if (isInvestisseur) {
-          // ===== INVESTISSEUR — premier email =====
+          // ===== INVESTISSEUR - premier email =====
 
           // 1) S'intéresser : reconnaître le profil investisseur
           lines.push(
             `J'ai vu que vous aviez utilisé le simulateur de valorisation` +
             (cuisine ? ` sur un fonds en ${cuisine}` : '') +
-            (estimation ? ` — estimation autour de ${formatAmount(estimation)}` : '') +
+            (estimation ? ` - estimation autour de ${formatAmount(estimation)}` : '') +
             `.`
           )
           lines.push('')
@@ -281,7 +281,7 @@ function buildEmailBody(p) {
           // 3) Proposition orientée investisseur
           lines.push(
             `Si vous étudiez cette opportunité, je peux vous donner en 10 minutes un premier retour ` +
-            `sur les points qui impactent la valorisation et le risque — ce que le bail dit vraiment, ` +
+            `sur les points qui impactent la valorisation et le risque - ce que le bail dit vraiment, ` +
             `les conformités à vérifier, et ce qu'il faut négocier dans l'acte.`
           )
           lines.push('')
@@ -291,13 +291,13 @@ function buildEmailBody(p) {
           )
 
         } else if (isEC) {
-          // ===== EXPERT-COMPTABLE — premier email =====
+          // ===== EXPERT-COMPTABLE - premier email =====
 
           // 1) S'intéresser : reconnaître le rôle du EC
           lines.push(
             `J'ai vu qu'une simulation de valorisation avait été réalisée via notre outil` +
             (estimation ? ` (estimation autour de ${formatAmount(estimation)})` : '') +
-            `. Je me permets de vous contacter car le profil renseigné indique que vous êtes expert-comptable — ` +
+            `. Je me permets de vous contacter car le profil renseigné indique que vous êtes expert-comptable -` +
             `j'imagine que cette estimation concerne l'un de vos clients.`
           )
           lines.push('')
@@ -315,11 +315,11 @@ function buildEmailBody(p) {
           lines.push(
             `Si votre client envisage une cession ou une acquisition, je serais ravi d'échanger 10 minutes ` +
             `avec vous pour voir comment nos interventions pourraient se coordonner. ` +
-            `C'est sans engagement — et ça peut faire gagner du temps à tout le monde.`
+            `C'est sans engagement - et ça peut faire gagner du temps à tout le monde.`
           )
 
         } else if (isIntermediaire) {
-          // ===== INTERMÉDIAIRE (agent immo, avocat, conseiller) — premier email =====
+          // ===== INTERMÉDIAIRE (agent immo, avocat, conseiller) - premier email =====
 
           const roleLabel = typeUser === 'agent immobilier' ? 'agent immobilier'
             : typeUser === 'avocat' ? 'avocat'
@@ -329,7 +329,7 @@ function buildEmailBody(p) {
           lines.push(
             `J'ai vu qu'une simulation de valorisation avait été réalisée via notre outil` +
             (estimation ? ` (estimation autour de ${formatAmount(estimation)})` : '') +
-            `. Votre profil indique que vous êtes ${roleLabel} — ` +
+            `. Votre profil indique que vous êtes ${roleLabel} -` +
             `je suppose que vous accompagnez un client sur ce dossier.`
           )
           lines.push('')
@@ -362,7 +362,7 @@ function buildEmailBody(p) {
           lines.push('')
           lines.push(
             `Votre client a-t-il avancé dans sa réflexion ? Si le dossier est toujours d'actualité, ` +
-            `je peux vous proposer un point rapide sur les aspects juridiques à anticiper — ` +
+            `je peux vous proposer un point rapide sur les aspects juridiques à anticiper -` +
             `bail, conformités, clauses sensibles. C'est sans engagement et ça prend 10 minutes.`
           )
         } else {
@@ -415,7 +415,7 @@ function buildEmailBody(p) {
           )
           lines.push('')
           lines.push(
-            `Si le dossier de votre client est toujours d'actualité — ou si un autre dossier se présente — ` +
+            `Si le dossier de votre client est toujours d'actualité - ou si un autre dossier se présente -` +
             `n'hésitez pas à me contacter. Je suis disponible pour un point rapide sur les aspects juridiques.`
           )
         } else {
@@ -424,7 +424,7 @@ function buildEmailBody(p) {
           )
           lines.push('')
           lines.push(
-            `Je comprends que le timing n'est peut-être pas le bon — ` +
+            `Je comprends que le timing n'est peut-être pas le bon -` +
             (isInvestisseur
               ? `ce type d'opération demande de la réflexion et le bon dossier.`
               : `une cession, ça se mûrit.`)
@@ -486,7 +486,7 @@ function buildEmailBody(p) {
         )
       } else {
         lines.push(
-          `Je me permets de revenir vers vous — je sais que ${context} est un sujet important ` +
+          `Je me permets de revenir vers vous - je sais que ${context} est un sujet important ` +
           `qui demande de la réflexion.`
         )
         lines.push('')
@@ -555,7 +555,7 @@ function buildEmailBody(p) {
         lines.push('')
         if (p.type_dossier === 'cession_fonds') {
           lines.push(
-            `Le marché de la cession en restauration évolue — les délais, les conditions de financement ` +
+            `Le marché de la cession en restauration évolue - les délais, les conditions de financement ` +
             `et les attentes des acquéreurs peuvent changer rapidement. Si votre projet est toujours d'actualité, ` +
             `un point rapide pourrait être utile.`
           )
@@ -573,7 +573,7 @@ function buildEmailBody(p) {
         lines.push('')
         lines.push(
           `Si votre situation a évolué ou si vos priorités ont changé, je le comprends parfaitement. ` +
-          `Dans tous les cas, n'hésitez pas à revenir vers moi le moment venu — ` +
+          `Dans tous les cas, n'hésitez pas à revenir vers moi le moment venu -` +
           `ce type de dossier nécessite souvent une préparation en amont.`
         )
       }
@@ -614,7 +614,7 @@ function buildEmailBody(p) {
       } else {
         lines.push(
           `Je reste disponible si vous avez des questions sur le contenu ou les conditions. ` +
-          `N'hésitez pas à me faire part de vos éventuelles remarques — ` +
+          `N'hésitez pas à me faire part de vos éventuelles remarques -` +
           `la lettre de mission peut tout à fait être adaptée à vos besoins.`
         )
       }
@@ -631,7 +631,7 @@ function buildEmailBody(p) {
       )
       lines.push('')
       lines.push(
-        `N'hésitez pas à me faire part de vos questions ou ajustements souhaités — ` +
+        `N'hésitez pas à me faire part de vos questions ou ajustements souhaités -` +
         `l'objectif est de démarrer dans les meilleures conditions.`
       )
       break
@@ -645,7 +645,7 @@ function buildEmailBody(p) {
       lines.push(
         `En tant que ${getTypePrescripteurLabel(p.type_prescripteur) || 'professionnel du secteur'}, ` +
         `vous êtes certainement en contact avec des restaurateurs ayant ce type de problématiques. ` +
-        `Je serais ravi d'échanger avec vous sur la façon dont nous pourrions collaborer — ` +
+        `Je serais ravi d'échanger avec vous sur la façon dont nous pourrions collaborer -` +
         `cela permet souvent d'apporter une vraie valeur ajoutée à vos clients.`
       )
       lines.push('')
@@ -676,7 +676,7 @@ function buildEmailBody(p) {
 
     case 'suivi_long_terme':
       lines.push(
-        `Je prends de vos nouvelles — cela fait un moment que nous n'avons pas échangé.`
+        `Je prends de vos nouvelles - cela fait un moment que nous n'avons pas échangé.`
       )
       lines.push('')
       lines.push(
@@ -761,7 +761,7 @@ function buildWhatsApp(p) {
             `Bonjour ${prenom}, j'ai vu votre estimation de valorisation pour votre ${cuisineWA}` +
             ` (~${formatAmount(p.simulateur_estimation)}). ` +
             `Je suis Louis Pinet, avocat spécialisé en cession de restos. ` +
-            `Si vous voulez, je peux vous faire un retour rapide sur votre estimation — ` +
+            `Si vous voulez, je peux vous faire un retour rapide sur votre estimation -` +
             `ce qui joue en votre faveur et les points à vérifier avant de vous lancer. ` +
             `Gratuit et sans engagement, l'idée c'est juste de vous donner de la visibilité.`
           )
@@ -799,7 +799,7 @@ function buildWhatsApp(p) {
       }
       return (
         `Bonjour ${prenom}, je vous avais contacté suite à votre simulation de valorisation. ` +
-        `Si le sujet redevient d'actualité, n'hésitez pas à me joindre — ` +
+        `Si le sujet redevient d'actualité, n'hésitez pas à me joindre - ` +
         `je pourrai vous faire un point rapide sur votre situation. Bonne continuation.`
       )
     }
@@ -841,7 +841,7 @@ function buildWhatsApp(p) {
     case 'diagnostic_rdv':
       return (
         `Bonjour ${prenom}, suite à notre rendez-vous, je souhaitais savoir si vous aviez pu réfléchir à la suite. ` +
-        `N'hésitez pas si vous avez des questions — je suis disponible pour en discuter.`
+        `N'hésitez pas si vous avez des questions - je suis disponible pour en discuter.`
       )
 
     case 'relance_en_attente':
@@ -877,7 +877,7 @@ function buildWhatsApp(p) {
     case 'prescripteur_a_activer':
       return (
         `Bonjour ${prenom}, je suis avocat spécialisé dans l'accompagnement des restaurateurs ` +
-        `(cession, bail, contentieux). Je serais ravi d'échanger avec vous — ` +
+        `(cession, bail, contentieux). Je serais ravi d'échanger avec vous -` +
         `vos clients restaurateurs pourraient bénéficier de cet accompagnement. Disponible pour un call ?`
       )
 
