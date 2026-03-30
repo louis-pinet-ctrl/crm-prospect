@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Phone, CalendarPlus, Download, Timer, Copy, AlertTriangle } from 'lucide-react'
+import { X, Trash2, Edit3, Calculator, MapPin, BookOpen, Users, Building2, ChefHat, Briefcase, UserCheck, RefreshCw, Clock, MessageCircle, Mail, Phone, CalendarPlus, Download, Timer, Copy, AlertTriangle, ChevronDown } from 'lucide-react'
 import ProspectForm from './ProspectForm'
 import NotesSection from './NotesSection'
 import ProspectSummary from './ProspectSummary'
@@ -261,9 +261,26 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
                   >
                     {getTypeDossierLabel(prospect.type_dossier)}
                   </span>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-bg-main text-text-secondary">
-                    {getLabel(STATUTS, prospect.statut)}
-                  </span>
+                  <div className="relative inline-block">
+                    <select
+                      value={prospect.statut}
+                      onChange={async (e) => {
+                        try {
+                          await onUpdate(prospect.id, { statut: e.target.value })
+                          if (onReload) onReload()
+                          toast.success(`Statut : ${getLabel(STATUTS, e.target.value)}`)
+                        } catch {
+                          toast.error('Erreur changement de statut')
+                        }
+                      }}
+                      className="text-xs font-medium pl-2.5 pr-7 py-1 rounded-full bg-bg-main text-text-primary border border-border hover:border-primary cursor-pointer appearance-none focus:outline-none focus:border-primary transition-colors"
+                    >
+                      {STATUTS.map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                  </div>
                   <span
                     className="text-xs px-2.5 py-1 rounded-full"
                     style={{

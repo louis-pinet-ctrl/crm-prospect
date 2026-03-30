@@ -116,18 +116,18 @@ function buildSubject(p) {
       const isInterSubj = typeSubj === 'agent immobilier' || typeSubj === 'avocat' || typeSubj === 'conseiller'
 
       if (isECSubj || isInterSubj) {
-        if (intensity === 'first') return `Simulation de valorisation : accompagnement juridique cession restaurant`
-        if (intensity === 'early') return `Suite simulation de valorisation : point juridique`
-        return `Votre client a-t-il avancé sur son projet de cession ?`
+        if (intensity === 'first') return `Accompagnement juridique en cession de restaurant`
+        if (intensity === 'early') return `Suite à votre simulation de valorisation`
+        return `Des nouvelles du projet de votre client ?`
       }
       if (intensity === 'first') {
         if (p.type_cuisine) {
-          return `Votre ${getCuisineLabel(p.type_cuisine)} : quelques observations sur votre estimation`
+          return `Quelques observations sur votre estimation`
         }
-        return `${p.nom} : quelques observations sur votre estimation`
+        return `Quelques observations sur votre estimation`
       }
-      if (intensity === 'early') return `${p.nom} : un point qui pourrait vous être utile`
-      return `${p.nom} : votre projet de cession`
+      if (intensity === 'early') return `Un point qui pourrait vous être utile`
+      return `Votre projet de cession`
     }
     case 'prospect_identifie':
       return `Accompagnement juridique pour votre restaurant`
@@ -146,13 +146,13 @@ function buildSubject(p) {
     case 'negociation':
       return `Suite de nos échanges`
     case 'prescripteur_a_activer':
-      return `Accompagnement restaurateurs : présentation`
+      return `Accompagnement des restaurateurs`
     case 'prescripteur':
       return `Prise de nouvelles`
     case 'suivi_long_terme':
-      return `Votre projet de ${typeDossier.toLowerCase()}`
+      return `Votre projet`
     default:
-      return `${p.nom} : ${typeDossier}`
+      return `${typeDossier}`
   }
 }
 
