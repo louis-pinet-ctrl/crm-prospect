@@ -216,7 +216,7 @@ function buildEmailBody(p) {
             const ratioLoyer = Math.round((p.loyer_mensuel * 12) / p.ca_annuel_declare * 100)
             if (ratioLoyer > 12) {
               lines.push(
-                `En regardant vos chiffres, je note que votre loyer représente environ ${ratioLoyer}% de votre CA -` +
+                `En regardant vos chiffres, je note que votre loyer représente environ ${ratioLoyer}% de votre CA, ` +
                 `c'est un point qui pèse souvent dans la négociation avec un acquéreur, et sur lequel ` +
                 `il y a parfois des leviers juridiques (renégociation au renouvellement, déplafonnement contestable, etc.).`
               )
@@ -240,7 +240,7 @@ function buildEmailBody(p) {
           lines.push(
             `Je suis Louis Pinet, avocat spécialisé dans la cession de fonds de commerce en restauration. ` +
             `Mon travail au quotidien, c'est d'auditer les baux commerciaux, d'identifier ce qui valorise ` +
-            `ou fragilise un fonds, et de rédiger des actes de cession qui protègent le vendeur -` +
+            `ou fragilise un fonds, et de rédiger des actes de cession qui protègent le vendeur, ` +
             `notamment sur les garanties, les conditions suspensives et les clauses de non-concurrence.`
           )
           lines.push('')
@@ -297,7 +297,7 @@ function buildEmailBody(p) {
           lines.push(
             `J'ai vu qu'une simulation de valorisation avait été réalisée via notre outil` +
             (estimation ? ` (estimation autour de ${formatAmount(estimation)})` : '') +
-            `. Je me permets de vous contacter car le profil renseigné indique que vous êtes expert-comptable -` +
+            `. Je me permets de vous contacter car le profil renseigné indique que vous êtes expert-comptable, et ` +
             `j'imagine que cette estimation concerne l'un de vos clients.`
           )
           lines.push('')
@@ -329,7 +329,7 @@ function buildEmailBody(p) {
           lines.push(
             `J'ai vu qu'une simulation de valorisation avait été réalisée via notre outil` +
             (estimation ? ` (estimation autour de ${formatAmount(estimation)})` : '') +
-            `. Votre profil indique que vous êtes ${roleLabel} -` +
+            `. Votre profil indique que vous êtes ${roleLabel}, et ` +
             `je suppose que vous accompagnez un client sur ce dossier.`
           )
           lines.push('')
@@ -362,7 +362,7 @@ function buildEmailBody(p) {
           lines.push('')
           lines.push(
             `Votre client a-t-il avancé dans sa réflexion ? Si le dossier est toujours d'actualité, ` +
-            `je peux vous proposer un point rapide sur les aspects juridiques à anticiper -` +
+            `je peux vous proposer un point rapide sur les aspects juridiques à anticiper, ` +
             `bail, conformités, clauses sensibles. C'est sans engagement et ça prend 10 minutes.`
           )
         } else {
@@ -424,7 +424,7 @@ function buildEmailBody(p) {
           )
           lines.push('')
           lines.push(
-            `Je comprends que le timing n'est peut-être pas le bon -` +
+            `Je comprends que le timing n'est peut-être pas le bon, ` +
             (isInvestisseur
               ? `ce type d'opération demande de la réflexion et le bon dossier.`
               : `une cession, ça se mûrit.`)
@@ -573,7 +573,7 @@ function buildEmailBody(p) {
         lines.push('')
         lines.push(
           `Si votre situation a évolué ou si vos priorités ont changé, je le comprends parfaitement. ` +
-          `Dans tous les cas, n'hésitez pas à revenir vers moi le moment venu -` +
+          `Dans tous les cas, n'hésitez pas à revenir vers moi le moment venu. ` +
           `ce type de dossier nécessite souvent une préparation en amont.`
         )
       }
@@ -614,7 +614,7 @@ function buildEmailBody(p) {
       } else {
         lines.push(
           `Je reste disponible si vous avez des questions sur le contenu ou les conditions. ` +
-          `N'hésitez pas à me faire part de vos éventuelles remarques -` +
+          `N'hésitez pas à me faire part de vos éventuelles remarques, ` +
           `la lettre de mission peut tout à fait être adaptée à vos besoins.`
         )
       }
@@ -631,7 +631,7 @@ function buildEmailBody(p) {
       )
       lines.push('')
       lines.push(
-        `N'hésitez pas à me faire part de vos questions ou ajustements souhaités -` +
+        `N'hésitez pas à me faire part de vos questions ou ajustements souhaités, ` +
         `l'objectif est de démarrer dans les meilleures conditions.`
       )
       break
@@ -645,7 +645,7 @@ function buildEmailBody(p) {
       lines.push(
         `En tant que ${getTypePrescripteurLabel(p.type_prescripteur) || 'professionnel du secteur'}, ` +
         `vous êtes certainement en contact avec des restaurateurs ayant ce type de problématiques. ` +
-        `Je serais ravi d'échanger avec vous sur la façon dont nous pourrions collaborer -` +
+        `Je serais ravi d'échanger avec vous sur la façon dont nous pourrions collaborer, ` +
         `cela permet souvent d'apporter une vraie valeur ajoutée à vos clients.`
       )
       lines.push('')
@@ -761,7 +761,7 @@ function buildWhatsApp(p) {
             `Bonjour ${prenom}, j'ai vu votre estimation de valorisation pour votre ${cuisineWA}` +
             ` (~${formatAmount(p.simulateur_estimation)}). ` +
             `Je suis Louis Pinet, avocat spécialisé en cession de restos. ` +
-            `Si vous voulez, je peux vous faire un retour rapide sur votre estimation -` +
+            `Si vous voulez, je peux vous faire un retour rapide sur votre estimation : ` +
             `ce qui joue en votre faveur et les points à vérifier avant de vous lancer. ` +
             `Gratuit et sans engagement, l'idée c'est juste de vous donner de la visibilité.`
           )
@@ -877,7 +877,7 @@ function buildWhatsApp(p) {
     case 'prescripteur_a_activer':
       return (
         `Bonjour ${prenom}, je suis avocat spécialisé dans l'accompagnement des restaurateurs ` +
-        `(cession, bail, contentieux). Je serais ravi d'échanger avec vous -` +
+        `(cession, bail, contentieux). Je serais ravi d'échanger avec vous, ` +
         `vos clients restaurateurs pourraient bénéficier de cet accompagnement. Disponible pour un call ?`
       )
 
