@@ -684,7 +684,7 @@ export default function ProspectModal({ prospect, onClose, onUpdate, onDelete, o
               <RelanceTemplates prospect={prospect} onQuickAction={handleQuickAction} onUpdate={onUpdate} onReload={onReload} notes={prospectNotes} />
 
               {/* Facturation */}
-              <FacturesSection prospectId={prospect.id} caEstime={prospect.ca_estime} />
+              <FacturesSection prospectId={prospect.id} caEstime={prospect.ca_estime} onFacturesChange={onReload} />
 
               {/* Suivi du dossier */}
               <DossierSection prospectId={prospect.id} typeDossier={prospect.type_dossier} />

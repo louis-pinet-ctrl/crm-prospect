@@ -18,6 +18,7 @@ import { useToast } from '../components/Toast'
 
 export default function KanbanPage({
   prospects,
+  allFactures,
   loading,
   update,
   onSelectProspect,
@@ -297,7 +298,7 @@ export default function KanbanPage({
 
       {/* Relances + Pipeline summary */}
       <RelancesWidget prospects={prospects} onSelectProspect={onSelectProspect} onReload={reload} />
-      <PipelineSummary prospects={prospects} />
+      <PipelineSummary prospects={prospects} allFactures={allFactures} />
 
       {/* Kanban board - 3 tunnels */}
       <div className="flex-1 overflow-y-auto">

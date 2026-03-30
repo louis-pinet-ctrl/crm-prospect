@@ -4,7 +4,7 @@ import { fetchFactures, createFacture, updateFacture, deleteFacture } from '../l
 import { formatCurrency } from '../lib/constants'
 import { useToast } from './Toast'
 
-export default function FacturesSection({ prospectId, caEstime }) {
+export default function FacturesSection({ prospectId, caEstime, onFacturesChange }) {
   const toast = useToast()
   const [factures, setFactures] = useState([])
   const [loading, setLoading] = useState(true)
@@ -45,6 +45,7 @@ export default function FacturesSection({ prospectId, caEstime }) {
       setFactures(prev => [...prev, facture])
       resetForm()
       toast.success('Facture ajoutée')
+      if (onFacturesChange) onFacturesChange()
     } catch (err) {
       console.error('Erreur création facture:', err)
       toast.error('Erreur lors de l\'ajout de la facture')
@@ -58,6 +59,7 @@ export default function FacturesSection({ prospectId, caEstime }) {
       const updated = await updateFacture(id, updates)
       setFactures(prev => prev.map(f => (f.id === id ? updated : f)))
       toast.success('Facture modifiée')
+      if (onFacturesChange) onFacturesChange()
       return true
     } catch (err) {
       console.error('Erreur mise à jour facture:', err)
@@ -71,6 +73,7 @@ export default function FacturesSection({ prospectId, caEstime }) {
       await deleteFacture(id)
       setFactures(prev => prev.filter(f => f.id !== id))
       toast.success('Facture supprimée')
+      if (onFacturesChange) onFacturesChange()
     } catch (err) {
       console.error('Erreur suppression facture:', err)
       toast.error('Erreur lors de la suppression')
