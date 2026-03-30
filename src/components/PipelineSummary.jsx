@@ -68,24 +68,10 @@ export default function PipelineSummary({ prospects, allFactures = [] }) {
 
   const cards = [
     {
-      icon: Briefcase,
-      label: 'Signé (en cours)',
-      value: stats.signeCount,
-      sub: formatCurrency(stats.signeValue),
-      color: 'text-success',
-    },
-    {
       icon: Users,
       label: 'Actifs',
       value: stats.totalActive,
       color: 'text-primary',
-    },
-    {
-      icon: TrendingUp,
-      label: 'En closing',
-      value: stats.closingCount,
-      sub: formatCurrency(stats.closingValue),
-      color: 'text-purple-400',
     },
     {
       icon: Target,
@@ -113,7 +99,7 @@ export default function PipelineSummary({ prospects, allFactures = [] }) {
   return (
     <div className="mx-6 mt-4 space-y-3">
       {/* Pipeline cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {cards.map((card) => (
           <div key={card.label} className="bg-bg-card border border-border rounded-lg px-4 py-3">
             <div className="flex items-center gap-2 mb-1">
